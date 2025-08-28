@@ -1,0 +1,68 @@
+[
+  {
+    "id": 7,
+    "user_id": 1,
+    "name": "12",
+    "development_standard": "",
+    "interface_example": "1",
+    "entity_example": "12",
+    "mapper_example": "12",
+    "created_at": "2025-08-27 19:11:08.558506",
+    "updated_at": "2025-08-27T19:18:17.869768"
+  },
+  {
+    "id": 8,
+    "user_id": 1,
+    "name": "11",
+    "development_standard": "",
+    "interface_example": "11",
+    "entity_example": "11",
+    "mapper_example": "11",
+    "created_at": "2025-08-27 19:13:03.532610",
+    "updated_at": "2025-08-27 19:13:03.532610"
+  },
+  {
+    "id": 9,
+    "user_id": 1,
+    "name": "11",
+    "development_standard": "",
+    "interface_example": "11",
+    "entity_example": "11",
+    "mapper_example": "11",
+    "created_at": "2025-08-27 19:14:23.532848",
+    "updated_at": "2025-08-27 19:14:23.532848"
+  },
+  {
+    "id": 10,
+    "user_id": 3,
+    "name": "Bote",
+    "development_standard": "- 接口采用简单的controller-service-serviceImpl-mapper.java-mapper.xml的层级设计，具体存放位置参照com.iwhalecloud.bote.doc.controller.FavoriteController#getPinnedFavorites接口；\r\n- 项目使用JDK8+SpringBoot2.7，请你在开发时注意代码的适配性；",
+    "interface_example": "com.iwhalecloud.bote.doc.controller.FavoriteController#getPinnedFavorites",
+    "entity_example": "src/main/java/com/iwhalecloud/bote/doc/module/library/dto/DocumentLibraryDTO.java",
+    "mapper_example": "com.iwhalecloud.bote.doc.mapper.ShareMapper",
+    "created_at": "2025-08-27 19:48:18.924288",
+    "updated_at": "2025-08-27 19:48:18.924288"
+  },
+  {
+    "id": 11,
+    "user_id": 4,
+    "name": "Bote",
+    "development_standard": "- 项目使用JDK8+SpringBoot2.7，请你在开发时注意代码的适配性；\r\n- 生成SQL时，请不要使用高级的SQL方法或机制，非必要禁用嵌套SQL，使用JOIN进行联表查询替代嵌套SQL，SQL只返回需要使用到的字段；",
+    "interface_example": "com.iwhalecloud.bote.doc.controller.FavoriteController#getPinnedFavorites",
+    "entity_example": "src/main/java/com/iwhalecloud/bote/doc/module/library/dto/DocumentLibraryDTO.java",
+    "mapper_example": "com.iwhalecloud.bote.doc.mapper.ShareMapper",
+    "created_at": "2025-08-27 19:57:21.160152",
+    "updated_at": "2025-08-27 19:57:21.160152"
+  },
+  {
+    "id": 12,
+    "user_id": 1,
+    "name": "Bote",
+    "development_standard": "- 接口采用简单的Controller-IService-ServiceImpl-Mapper.java-Mapper.xml的层级设计，具体存放位置参照com.iwhalecloud.bote.doc.module.library.controller.DocumentLibraryController#page接口，存放至DocumentLibraryController及其其他类对应的位置；\r\n- 请你在开发时，格外注意**所有使用的方法必须要在项目中有过已使用案例**以确保可用性和规范性；\r\n- 项目使用JDK8+SpringBoot2.7，请你在开发时注意代码的适配性；\r\n- 生成SQL时，请不要使用高级的SQL方法或机制，非必要禁用嵌套SQL，使用JOIN进行联表查询替代嵌套SQL，SQL只返回需要使用到的字段；\r\n- 有可能导致你开发出现错误的不明确的问题或信息，请你先向我询问答案，再进行开发。",
+    "interface_example": "com.iwhalecloud.bote.doc.module.library.controller.DocumentLibraryController#page",
+    "entity_example": "com.iwhalecloud.bote.doc.entity.UserHomepagePinEntity",
+    "mapper_example": "com.iwhalecloud.bote.doc.mapper.HomepageMapper",
+    "created_at": "2025-08-28 09:26:35.756260",
+    "updated_at": "2025-08-28 09:26:35.756260"
+  }
+]

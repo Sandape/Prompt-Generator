@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}任务类型选择 - {{ project.name }} - Prompt Generator{% endblock %}
+
+{% block content %}
+<h1>任务类型选择</h1>
+
+<div class="task-types-container">
+    <h2>请选择合适的任务类型</h2>
+    <div class="task-types-grid">
+        {% for task_type in task_types %}
+        <a href="/tasks/{{ project.id }}/{{ task_type.id }}" class="task-type-card">
+            <div class="task-type-icon">{{ task_type.icon }}</div>
+            <div class="task-type-info">
+                <h3 class="task-type-name">{{ task_type.name }}</h3>
+                <p class="task-type-description">{{ task_type.description }}</p>
+            </div>
+            <div class="task-type-arrow">→</div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="navigation-buttons">
+    <a href="/projects" class="btn btn-secondary">返回项目列表</a>
+    <a href="/menu" class="btn btn-secondary">返回主菜单</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 添加任务卡片悬停效果
+    const taskCards = document.querySelectorAll('.task-type-card');
+    taskCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = 'var(--shadow-4)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'var(--shadow-2)';
+        });
+    });
+});
+</script>
+{% endblock %}

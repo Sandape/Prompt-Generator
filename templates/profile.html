@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}个人中心 - Prompt Generator{% endblock %}
+
+{% block content %}
+<div class="form-page-container">
+    <h1>个人中心</h1>
+    <p style="color: var(--text-secondary); margin-bottom: 2rem;">配置您的AI服务连接信息</p>
+
+    <form id="aiConfigForm" method="post">
+        <div class="form-group">
+            <label for="api_url">API URL *</label>
+            <input type="url" id="api_url" name="api_url" required
+                   placeholder="https://api.openai.com/v1/chat/completions"
+                   value="{{ ai_config.api_url if ai_config else '' }}">
+            <div class="form-help">OpenAI兼容API的URL地址</div>
+        </div>
+
+        <div class="form-group">
+            <label for="api_key">API Key *</label>
+            <input type="password" id="api_key" name="api_key" required
+                   placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                   value="{{ ai_config.api_key if ai_config else '' }}">
+            <div class="form-help">您的AI服务API密钥</div>
+        </div>
+
+        <div class="form-group">
+            <label for="model_name">模型名称 *</label>
+            <input type="text" id="model_name" name="model_name" required
+                   placeholder="gpt-3.5-turbo"
+                   value="{{ ai_config.model_name if ai_config else 'gpt-3.5-turbo' }}">
+            <div class="form-help">AI模型名称，如gpt-3.5-turbo, gpt-4等</div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <span class="material-icons">save</span>
+                保存配置
+            </button>
+            <button type="button" id="testConnection" class="btn btn-secondary">
+                <span class="material-icons">send</span>
+                测试连接
+            </button>
+            <a href="/menu" class="btn btn-secondary">
+                <span class="material-icons">arrow_back</span>
+                返回菜单
+            </a>
+        </div>
+    </form>
+
+    <!-- 测试结果显示区域 -->
+    <div id="testResult" class="message-container" style="display: none;"></div>
+</div>
+
+<style>
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+    background: #fff;
+}
+
+.form-group input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(98, 0, 234, 0.1);
+    outline: none;
+}
+
+.form-help {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.message-container {
+    margin-top: 2rem;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border-left: 4px solid;
+}
+
+.message-container.success {
+    background-color: #e8f5e8;
+    border-left-color: #4caf50;
+    color: #2e7d32;
+}
+
+.message-container.error {
+    background-color: #ffebee;
+    border-left-color: #f44336;
+    color: #c62828;
+}
+
+.message-container.info {
+    background-color: #e3f2fd;
+    border-left-color: #2196f3;
+    color: #1565c0;
+}
+
+#testResult {
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('aiConfigForm');
+    const testButton = document.getElementById('testConnection');
+    const testResult = document.getElementById('testResult');
+
+    // 保存配置
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const data = {
+            api_url: formData.get('api_url'),
+            api_key: formData.get('api_key'),
+            model_name: formData.get('model_name')
+        };
+
+        try {
+            const response = await fetch('/profile/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            showMessage(result.message, result.success ? 'success' : 'error');
+        } catch (error) {
+            showMessage('网络错误，请稍后重试', 'error');
+        }
+    });
+
+    // 测试连接
+    testButton.addEventListener('click', async function() {
+        testButton.disabled = true;
+        testButton.innerHTML = '<span class="material-icons">hourglass_empty</span> 测试中...';
+
+        try {
+            const response = await fetch('/profile/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: '你好' })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showMessage(`测试成功！\n\nAI回复：${result.ai_response}`, 'success');
+            } else {
+                showMessage(`测试失败：${result.message}`, 'error');
+            }
+        } catch (error) {
+            showMessage('网络错误，请稍后重试', 'error');
+        } finally {
+            testButton.disabled = false;
+            testButton.innerHTML = '<span class="material-icons">send</span> 测试连接';
+        }
+    });
+
+    function showMessage(message, type) {
+        testResult.style.display = 'block';
+        testResult.className = `message-container ${type}`;
+        testResult.textContent = message;
+
+        // 自动滚动到消息区域
+        testResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+});
+</script>
+{% endblock %}

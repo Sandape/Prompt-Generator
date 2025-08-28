@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}注册 - Prompt Generator{% endblock %}
+
+{% block content %}
+<h1>注册账号</h1>
+
+{% if error %}
+<div class="error-message">{{ error }}</div>
+{% endif %}
+
+<form action="/auth/register" method="post">
+    <div class="form-group">
+        <label for="email">邮箱地址</label>
+        <input type="email" id="email" name="email" required placeholder="请输入邮箱地址">
+    </div>
+
+    <div class="form-group">
+        <label for="username">用户名</label>
+        <input type="text" id="username" name="username" required placeholder="请输入用户名" minlength="3" maxlength="20">
+    </div>
+
+    <div class="form-group">
+        <label for="password">密码</label>
+        <div style="position: relative;">
+            <input type="password" id="password" name="password" required placeholder="请输入密码" minlength="6">
+            <span class="password-toggle" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer;">👁️</span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="confirm_password">确认密码</label>
+        <div style="position: relative;">
+            <input type="password" id="confirm_password" name="confirm_password" required placeholder="请再次输入密码">
+            <span class="password-toggle" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer;">👁️</span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="captcha">验证码</label>
+        <div class="captcha-container">
+            <input type="text" id="captcha" name="captcha" required placeholder="请输入验证码" maxlength="4" style="flex: 1;">
+            <img src="" alt="验证码" class="captcha-image" id="captcha-image" style="width: 120px; height: 40px;">
+            <input type="hidden" name="captcha_id" id="captcha-id">
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">注册</button>
+</form>
+
+<div style="text-align: center; margin-top: 2rem;">
+    <p>已有账号？ <a href="/login" class="link">立即登录</a></p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 加载验证码
+    function loadCaptcha() {
+        fetch('/auth/captcha')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('captcha-image').src = data.captcha_image;
+                document.getElementById('captcha-id').value = data.captcha_id;
+            })
+            .catch(error => {
+                console.error('Error loading captcha:', error);
+            });
+    }
+
+    // 页面加载时获取验证码
+    loadCaptcha();
+
+    // 点击验证码图片刷新
+    document.getElementById('captcha-image').addEventListener('click', loadCaptcha);
+
+    // 密码确认验证
+    document.getElementById('confirm_password').addEventListener('input', function() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = this.value;
+
+        if (password !== confirmPassword) {
+            this.setCustomValidity('两次输入的密码不一致');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+});
+</script>
+{% endblock %}

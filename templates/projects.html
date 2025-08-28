@@ -1,0 +1,543 @@
+{% extends "base.html" %}
+
+{% block title %}项目选择 - Prompt Generator{% endblock %}
+
+{% block content %}
+<h1>项目空间管理</h1>
+
+<div class="projects-container">
+    <div class="projects-header">
+        <h2>我的项目空间</h2>
+        {% if can_create %}
+        <a href="/projects/create" class="btn btn-primary">新建项目空间</a>
+        {% else %}
+        <button type="button" class="btn btn-primary" onclick="showProjectLimitModal()">新建项目空间</button>
+        {% endif %}
+    </div>
+
+    {% if projects %}
+    <div class="projects-list">
+        {% for project in projects %}
+        <div class="project-bar" onclick="window.location.href='/projects/{{ project.id }}/tasks'">
+            <div class="project-bar-main">
+                <span class="project-bar-name">{{ project.name }}</span>
+                <button type="button" class="btn-edit-project" onclick="event.stopPropagation(); openEditModal({{ project.id }}, '{{ project.name }}')" title="编辑项目">
+                    ✏️
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-projects">
+        <div class="no-projects-icon">📁</div>
+        <h3>暂无项目空间</h3>
+        <p>创建您的第一个项目空间来开始使用Prompt Generator</p>
+    </div>
+    {% endif %}
+</div>
+
+<div style="text-align: center; margin-top: 3rem;">
+    <a href="/menu" class="btn btn-secondary">返回菜单</a>
+</div>
+
+<!-- 项目数量限制弹窗 -->
+<div id="projectLimitModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>项目数量限制</h3>
+            <span class="modal-close" onclick="closeProjectLimitModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="modal-icon">⚠️</div>
+            <p class="modal-message">您已经达到了项目空间数量上限（{{ max_projects }}个）。</p>
+            <p class="modal-description">要创建新项目空间，请选择一个项目空间进行删除：</p>
+
+            <div class="modal-projects-list">
+                {% for project in projects %}
+                <div class="modal-project-bar" data-project-id="{{ project.id }}" onclick="selectProjectForDeletion({{ project.id }}, '{{ project.name }}')">
+                    <div class="modal-project-bar-main">
+                        <span class="modal-project-bar-name">{{ project.name }}</span>
+                        <span class="modal-project-bar-date">{{ project.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    <!-- 删除状态提示会通过伪元素显示 -->
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeProjectLimitModal()">取消</button>
+        </div>
+    </div>
+</div>
+
+<!-- 项目编辑弹窗 -->
+<div id="editProjectModal" class="modal">
+    <div class="modal-content edit-modal-content">
+        <div class="modal-header">
+            <h3>编辑项目空间</h3>
+            <span class="modal-close" onclick="closeEditModal()">&times;</span>
+        </div>
+        <form id="editProjectForm" class="modal-body" method="post">
+            <div class="form-group">
+                <label for="edit_project_name">项目空间名称 *</label>
+                <input type="text" id="edit_project_name" name="name" required
+                       placeholder="请输入项目空间名称"
+                       class="form-input-valid">
+            </div>
+
+            <div class="form-group">
+                <label for="edit_development_standard">项目开发规范</label>
+                <div class="standards-container">
+                    <div class="standards-display">
+                        <div class="standards-ball" id="editStandardsBall">
+                            <span class="standards-count" id="editStandardsCount">0</span>
+                        </div>
+                        <span class="standards-label">已添加规范</span>
+                    </div>
+                    <div class="standards-panel" id="editStandardsPanel">
+                        <div class="standards-header">
+                            <h4>项目开发规范</h4>
+                            <button type="button" class="btn-close" id="editCloseStandards">&times;</button>
+                        </div>
+                        <div class="standards-list" id="editStandardsList">
+                            <!-- 动态生成的规范列表 -->
+                        </div>
+                        <div class="standards-actions">
+                            <button type="button" class="btn btn-secondary btn-small" id="editAddStandard">新增规范</button>
+                        </div>
+                    </div>
+                    <!-- 隐藏字段存储规范数据 -->
+                    <input type="hidden" id="edit_development_standard" name="development_standard">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="edit_interface_example">项目层级示例接口路径</label>
+                <input type="text" id="edit_interface_example" name="interface_example" required
+                       placeholder="请输入项目层级示例接口路径"
+                       class="form-input-valid">
+            </div>
+
+            <div class="form-group">
+                <label for="edit_entity_example">示例实体类接口路径</label>
+                <input type="text" id="edit_entity_example" name="entity_example" required
+                       placeholder="请输入示例实体类接口路径"
+                       class="form-input-valid">
+            </div>
+
+            <div class="form-group">
+                <label for="edit_mapper_example">示例Mapper类接口路径</label>
+                <input type="text" id="edit_mapper_example" name="mapper_example" required
+                       placeholder="请输入示例Mapper类接口路径"
+                       class="form-input-valid">
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+                <button type="submit" class="btn btn-primary">保存修改</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 项目空间管理相关函数
+    function showProjectLimitModal() {
+        const modal = document.getElementById('projectLimitModal');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden'; // 防止背景滚动
+    }
+
+    function closeProjectLimitModal() {
+        const modal = document.getElementById('projectLimitModal');
+
+        // 添加关闭动画
+        modal.classList.add('closing');
+        modal.classList.remove('show');
+
+        // 等待动画完成后隐藏模态框
+        setTimeout(() => {
+            modal.classList.remove('closing');
+            document.body.style.overflow = ''; // 恢复背景滚动
+
+            // 重置所有项目状态
+            document.querySelectorAll('.modal-project-bar').forEach(bar => {
+                bar.classList.remove('selected', 'confirm-delete');
+            });
+
+            // 重置选中状态
+            selectedProjectForDeletion = null;
+        }, 300); // 动画持续时间
+    }
+
+    // 存储选中的项目信息
+    let selectedProjectForDeletion = null;
+
+    function selectProjectForDeletion(projectId, projectName) {
+        const projectBar = document.querySelector(`[data-project-id="${projectId}"]`);
+
+        // 如果点击的是已经选中的项目，进行确认删除
+        if (projectBar.classList.contains('selected')) {
+            confirmDeleteProject(projectId, projectName);
+            return;
+        }
+
+        // 重置其他项目状态
+        document.querySelectorAll('.modal-project-bar').forEach(bar => {
+            bar.classList.remove('selected', 'confirm-delete');
+        });
+
+        // 选中当前项目
+        projectBar.classList.add('selected');
+
+        selectedProjectForDeletion = { id: projectId, name: projectName };
+
+        // 3秒后自动取消选择
+        setTimeout(() => {
+            if (selectedProjectForDeletion && selectedProjectForDeletion.id === projectId) {
+                projectBar.classList.remove('selected');
+                selectedProjectForDeletion = null;
+            }
+        }, 3000);
+    }
+
+    function confirmDeleteProject(projectId, projectName) {
+        const projectBar = document.querySelector(`[data-project-id="${projectId}"]`);
+
+        // 添加确认删除状态
+        projectBar.classList.add('confirm-delete');
+
+        // 发送删除请求
+        fetch(`/projects/${projectId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // 删除成功，关闭弹窗并立即刷新页面
+                closeProjectLimitModal();
+                window.location.reload();
+            } else {
+                throw new Error('删除失败');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('删除项目空间失败，请稍后重试', 'error');
+
+            // 重置状态
+            projectBar.classList.remove('selected', 'confirm-delete');
+            selectedProjectForDeletion = null;
+        });
+    }
+
+    function showMessage(message, type = 'info') {
+        const existingMessage = document.querySelector('.message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}-message`;
+        messageDiv.textContent = message;
+
+        const container = document.querySelector('.container');
+        container.insertBefore(messageDiv, container.firstChild);
+
+        setTimeout(() => {
+            messageDiv.remove();
+        }, 5000);
+    }
+
+    // 页面加载后的初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        // 项目空间横条交互效果
+        const projectBars = document.querySelectorAll('.project-bar');
+        projectBars.forEach(bar => {
+            bar.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-1px)';
+            });
+            bar.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // 点击模态框背景关闭弹窗
+        const modal = document.getElementById('projectLimitModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeProjectLimitModal();
+                }
+            });
+        }
+
+        // 编辑模态框背景点击关闭
+        const editModal = document.getElementById('editProjectModal');
+        if (editModal) {
+            editModal.addEventListener('click', function(e) {
+                if (e.target === editModal) {
+                    closeEditModal();
+                }
+            });
+        }
+
+        // ESC键关闭弹窗
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeProjectLimitModal();
+                closeEditModal();
+            }
+        });
+    });
+
+    // 项目编辑相关函数
+    let currentEditingProjectId = null;
+
+    function openEditModal(projectId, projectName) {
+        currentEditingProjectId = projectId;
+
+        // 显示加载状态
+        showMessage('正在加载项目信息...', 'info');
+
+        // 获取项目详细信息
+        fetch(`/projects/${projectId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('获取项目信息失败');
+                }
+                return response.json();
+            })
+            .then(project => {
+                // 填充表单数据
+                document.getElementById('edit_project_name').value = project.name;
+                document.getElementById('edit_interface_example').value = project.interface_example || '';
+                document.getElementById('edit_entity_example').value = project.entity_example || '';
+                document.getElementById('edit_mapper_example').value = project.mapper_example || '';
+
+                // 处理开发规范
+                loadEditStandards(project.development_standard || '');
+
+                // 显示模态框
+                const modal = document.getElementById('editProjectModal');
+                modal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+
+                // 清除之前的消息
+                setTimeout(() => {
+                    const existingMessage = document.querySelector('.message');
+                    if (existingMessage) {
+                        existingMessage.remove();
+                    }
+                }, 1000);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('加载项目信息失败，请稍后重试', 'error');
+            });
+    }
+
+    function closeEditModal() {
+        const modal = document.getElementById('editProjectModal');
+
+        // 添加关闭动画
+        modal.classList.add('closing');
+        modal.classList.remove('show');
+
+        // 等待动画完成后隐藏模态框
+        setTimeout(() => {
+            modal.classList.remove('closing');
+            document.body.style.overflow = ''; // 恢复背景滚动
+            currentEditingProjectId = null;
+
+            // 重置表单
+            document.getElementById('editProjectForm').reset();
+            document.getElementById('editStandardsList').innerHTML = '';
+            document.getElementById('editStandardsCount').textContent = '0';
+        }, 300);
+    }
+
+    function loadEditStandards(standardsValue) {
+        let standards = [];
+
+        // 从隐藏字段加载现有规范
+        if (standardsValue) {
+            // 如果是无序列表格式，解析为数组
+            if (standardsValue.includes('- ')) {
+                standards = standardsValue.split('\n')
+                    .filter(line => line.trim().startsWith('- '))
+                    .map(line => line.trim().substring(2));
+            } else {
+                // 如果是旧格式，按行分割
+                standards = standardsValue.split('\n').filter(line => line.trim());
+            }
+        }
+
+        // 更新隐藏字段和显示
+        updateEditStandardsDisplay(standards);
+        renderEditStandardsList(standards);
+    }
+
+    function updateEditStandardsDisplay(standards) {
+        const count = standards.filter(s => s.trim()).length;
+        document.getElementById('editStandardsCount').textContent = count;
+    }
+
+    function renderEditStandardsList(standards) {
+        const standardsList = document.getElementById('editStandardsList');
+        standardsList.innerHTML = '';
+
+        standards.forEach((standard, index) => {
+            const standardItem = document.createElement('div');
+            standardItem.className = 'standard-item';
+            standardItem.innerHTML = `
+                <input type="text" class="standard-input" value="${standard}" data-index="${index}">
+                <button type="button" class="btn-delete" data-index="${index}">删除</button>
+            `;
+            standardsList.appendChild(standardItem);
+        });
+
+        // 绑定事件
+        document.querySelectorAll('#editStandardsList .standard-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const index = parseInt(this.dataset.index);
+                standards[index] = this.value;
+                updateEditHiddenField(standards);
+                updateEditStandardsDisplay(standards);
+            });
+        });
+
+        document.querySelectorAll('#editStandardsList .btn-delete').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                standards.splice(index, 1);
+                updateEditStandardsDisplay(standards);
+                renderEditStandardsList(standards);
+                updateEditHiddenField(standards);
+            });
+        });
+    }
+
+    function updateEditHiddenField(standards) {
+        const validStandards = standards.filter(standard => standard.trim());
+        const formattedStandards = validStandards.length > 0
+            ? validStandards.map(standard => `- ${standard.trim()}`).join('\n')
+            : "";
+        document.getElementById('edit_development_standard').value = formattedStandards;
+    }
+
+    // 编辑模态框的开发规范管理
+    document.addEventListener('DOMContentLoaded', function() {
+        const editStandardsBall = document.getElementById('editStandardsBall');
+        const editStandardsPanel = document.getElementById('editStandardsPanel');
+        const editAddStandardBtn = document.getElementById('editAddStandard');
+        const editCloseStandardsBtn = document.getElementById('editCloseStandards');
+
+        // 圆球点击事件
+        editStandardsBall.addEventListener('click', function() {
+            editStandardsPanel.style.display = editStandardsPanel.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // 关闭按钮
+        editCloseStandardsBtn.addEventListener('click', function() {
+            editStandardsPanel.style.display = 'none';
+        });
+
+        // 新增规范
+        editAddStandardBtn.addEventListener('click', function() {
+            const standardsList = document.getElementById('editStandardsList');
+            const newIndex = standardsList.children.length;
+
+            const standardItem = document.createElement('div');
+            standardItem.className = 'standard-item';
+            standardItem.innerHTML = `
+                <input type="text" class="standard-input" value="" data-index="${newIndex}" placeholder="请输入规范内容">
+                <button type="button" class="btn-delete" data-index="${newIndex}">删除</button>
+            `;
+
+            standardsList.appendChild(standardItem);
+
+            // 绑定新元素的事件
+            const newInput = standardItem.querySelector('.standard-input');
+            const newDeleteBtn = standardItem.querySelector('.btn-delete');
+
+            newInput.addEventListener('input', function() {
+                updateEditHiddenField(getCurrentEditStandards());
+                updateEditStandardsDisplay(getCurrentEditStandards());
+            });
+
+            newDeleteBtn.addEventListener('click', function() {
+                standardItem.remove();
+                updateEditHiddenField(getCurrentEditStandards());
+                updateEditStandardsDisplay(getCurrentEditStandards());
+            });
+
+            // 聚焦到新输入框
+            setTimeout(() => {
+                newInput.focus();
+            }, 100);
+        });
+
+        // 点击面板外部关闭
+        document.addEventListener('click', function(e) {
+            if (!editStandardsBall.contains(e.target) && !editStandardsPanel.contains(e.target)) {
+                editStandardsPanel.style.display = 'none';
+            }
+        });
+
+        // 表单提交处理
+        document.getElementById('editProjectForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!currentEditingProjectId) {
+                showMessage('项目ID丢失，请重新操作', 'error');
+                return;
+            }
+
+            const formData = new FormData(this);
+
+            // 显示提交状态
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = '保存中...';
+            submitBtn.disabled = true;
+
+            fetch(`/projects/${currentEditingProjectId}/edit`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    showMessage('项目信息更新成功！', 'success');
+                    closeEditModal();
+                    // 刷新页面以显示更新后的信息
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error('更新失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('更新项目信息失败，请稍后重试', 'error');
+            })
+            .finally(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+    });
+
+    function getCurrentEditStandards() {
+        const inputs = document.querySelectorAll('#editStandardsList .standard-input');
+        return Array.from(inputs).map(input => input.value);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Prompt Generator{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<div class="form-container">
+    <form action="/projects/{{ 'create' if action == 'create' else project.id ~ '/edit' }}" method="post" class="project-form">
+        {% if error %}
+        <div class="error-message">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="name">项目空间名称 *</label>
+            <input type="text" id="name" name="name" required
+                   value="{{ form_data.name if form_data else project.name if project else '' }}"
+                   placeholder="请输入项目空间名称"
+                   class="form-input-valid">
+        </div>
+
+        <div class="form-group">
+            <label for="development_standard">项目开发规范</label>
+            <div class="standards-container">
+                <div class="standards-display">
+                    <div class="standards-ball" id="standardsBall">
+                        <span class="standards-count" id="standardsCount">0</span>
+                    </div>
+                    <span class="standards-label">已添加规范</span>
+                </div>
+                <div class="standards-panel" id="standardsPanel">
+                    <div class="standards-header">
+                        <h4>项目开发规范</h4>
+                        <button type="button" class="btn-close" id="closeStandards">&times;</button>
+                    </div>
+                    <div class="standards-list" id="standardsList">
+                        <!-- 动态生成的规范列表 -->
+                    </div>
+                    <div class="standards-actions">
+                        <button type="button" class="btn btn-secondary btn-small" id="addStandard">新增规范</button>
+                    </div>
+                </div>
+                <!-- 隐藏字段存储规范数据 -->
+                <input type="hidden" id="development_standard" name="development_standard"
+                       value="{{ form_data.development_standard if form_data else project.development_standard if project else '' }}">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="interface_example">项目层级示例接口路径</label>
+            <input type="text" id="interface_example" name="interface_example" required
+                   value="{{ form_data.interface_example if form_data else project.interface_example if project else '' }}"
+                   placeholder="请输入项目层级示例接口路径"
+                   class="form-input-valid">
+        </div>
+
+        <div class="form-group">
+            <label for="entity_example">示例实体类接口路径</label>
+            <input type="text" id="entity_example" name="entity_example" required
+                   value="{{ form_data.entity_example if form_data else project.entity_example if project else '' }}"
+                   placeholder="请输入示例实体类接口路径"
+                   class="form-input-valid">
+        </div>
+
+        <div class="form-group">
+            <label for="mapper_example">示例Mapper类接口路径</label>
+            <input type="text" id="mapper_example" name="mapper_example" required
+                   value="{{ form_data.mapper_example if form_data else project.mapper_example if project else '' }}"
+                   placeholder="请输入示例Mapper类接口路径"
+                   class="form-input-valid">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {{ '创建项目' if action == 'create' else '保存修改' }}
+            </button>
+            <a href="/projects" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 开发规范管理
+    const standardsBall = document.getElementById('standardsBall');
+    const standardsPanel = document.getElementById('standardsPanel');
+    const standardsList = document.getElementById('standardsList');
+    const standardsCount = document.getElementById('standardsCount');
+    const addStandardBtn = document.getElementById('addStandard');
+    const closeStandardsBtn = document.getElementById('closeStandards');
+    const developmentStandardInput = document.getElementById('development_standard');
+
+    // 存储规范数据
+    let standards = [];
+
+    // 从隐藏字段加载现有规范
+    function loadExistingStandards() {
+        const value = developmentStandardInput.value;
+        if (value) {
+            // 如果是无序列表格式，解析为数组
+            if (value.includes('- ')) {
+                standards = value.split('\n')
+                    .filter(line => line.trim().startsWith('- '))
+                    .map(line => line.trim().substring(2));
+            } else {
+                // 如果是旧格式，按行分割
+                standards = value.split('\n').filter(line => line.trim());
+            }
+        }
+        updateStandardsDisplay();
+        renderStandardsList();
+    }
+
+    // 更新显示
+    function updateStandardsDisplay() {
+        standardsCount.textContent = standards.length;
+    }
+
+    // 渲染规范列表
+    function renderStandardsList() {
+        standardsList.innerHTML = '';
+        standards.forEach((standard, index) => {
+            const standardItem = document.createElement('div');
+            standardItem.className = 'standard-item';
+            standardItem.innerHTML = `
+                <input type="text" class="standard-input" value="${standard}" data-index="${index}">
+                <button type="button" class="btn-delete" data-index="${index}">删除</button>
+            `;
+            standardsList.appendChild(standardItem);
+        });
+
+        // 绑定事件
+        document.querySelectorAll('.standard-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const index = parseInt(this.dataset.index);
+                standards[index] = this.value;
+                updateHiddenField();
+            });
+        });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                standards.splice(index, 1);
+                updateStandardsDisplay();
+                renderStandardsList();
+                updateHiddenField();
+            });
+        });
+    }
+
+    // 更新隐藏字段
+    function updateHiddenField() {
+        const validStandards = standards.filter(standard => standard.trim());
+        const formattedStandards = validStandards.length > 0
+            ? validStandards.map(standard => `- ${standard.trim()}`).join('\n')
+            : "";
+        developmentStandardInput.value = formattedStandards;
+    }
+
+    // 圆球点击事件
+    standardsBall.addEventListener('click', function() {
+        standardsPanel.style.display = standardsPanel.style.display === 'block' ? 'none' : 'block';
+    });
+
+    // 关闭按钮
+    closeStandardsBtn.addEventListener('click', function() {
+        standardsPanel.style.display = 'none';
+    });
+
+    // 新增规范
+    addStandardBtn.addEventListener('click', function() {
+        standards.push('');
+        updateStandardsDisplay();
+        renderStandardsList();
+        updateHiddenField();
+
+        // 聚焦到新输入框
+        setTimeout(() => {
+            const newInputs = document.querySelectorAll('.standard-input');
+            if (newInputs.length > 0) {
+                newInputs[newInputs.length - 1].focus();
+            }
+        }, 100);
+    });
+
+    // 点击面板外部关闭
+    document.addEventListener('click', function(e) {
+        if (!standardsBall.contains(e.target) && !standardsPanel.contains(e.target)) {
+            standardsPanel.style.display = 'none';
+        }
+    });
+
+    // 初始化
+    loadExistingStandards();
+
+    // 表单验证
+    const form = document.querySelector('.project-form');
+
+    form.addEventListener('submit', function(e) {
+        // 只验证项目名称（唯一必填字段）
+        const nameField = document.getElementById('name');
+        if (!nameField.value.trim()) {
+            nameField.classList.add('error');
+            e.preventDefault();
+            alert('请填写项目空间名称');
+        } else {
+            nameField.classList.remove('error');
+        }
+    });
+
+    // 实时验证项目名称
+    const nameField = document.getElementById('name');
+    nameField.addEventListener('blur', function() {
+        if (!this.value.trim()) {
+            this.classList.add('error');
+        } else {
+            this.classList.remove('error');
+        }
+    });
+});
+</script>
+{% endblock %}

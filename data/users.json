@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "email": "3080340895@qq.com",
+    "username": "lizuyin",
+    "password_hash": "$2b$12$s..VfoRf03l9MAWrHyWIteZaQcjMqdCzkIaYgd/qCCgJJgutqaJj6",
+    "created_at": "2025-08-27 09:39:46.565372",
+    "is_active": true
+  },
+  {
+    "id": 2,
+    "email": "1346464646@qq.com",
+    "username": "Lzy",
+    "password_hash": "$2b$12$8.7A3RpPYPAXMYDJFLuZwuBYWOeOk0/w2n4d41OzIBllVsUvQroba",
+    "created_at": "2025-08-27 19:45:46.561332",
+    "is_active": true
+  },
+  {
+    "id": 3,
+    "email": "3080340891@qq.com",
+    "username": "lzy",
+    "password_hash": "$2b$12$CW71vIwadv2mJkVmjsJG3OopEItoVa/QvLZ0uKqK5YjL2HVehsDzO",
+    "created_at": "2025-08-27 19:47:27.284718",
+    "is_active": true
+  },
+  {
+    "id": 4,
+    "email": "3080340@qq.com",
+    "username": "lidodo",
+    "password_hash": "$2b$12$8iS5AKMdu3bbYx53eHh/LOeCAibNY9g0ZQx7hF01lBeKj.8KpTnpK",
+    "created_at": "2025-08-27 19:56:11.665018",
+    "is_active": true
+  },
+  {
+    "id": 5,
+    "email": "2112006068@qq.com",
+    "username": "Moli",
+    "password_hash": "$2b$12$M4/xpWsgLy7jnmTgEZ8TnOPFHECySl19f0ag9KflaPUa4uT5waGOe",
+    "created_at": "2025-08-28 09:30:16.429672",
+    "is_active": true
+  }
+]

@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>接口类任务 - {{ project.name }} - Prompt Generator</title>
+    <link rel="stylesheet" href="/static/css/form_styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div class="form-page-container">
+        <div class="interface-task-container">
+    <!-- 表单容器 -->
+    <form id="interfaceTaskForm" class="interface-form">
+        <!-- 第一页：接口基本信息 -->
+        <div class="form-page active" id="page1">
+            <div class="page-header">
+                <h3>第一步：接口基本信息</h3>
+                <p>请填写接口的基本信息</p>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="interfaceName">接口名称</label>
+                    <input type="text" id="interfaceName" name="interface_name" placeholder="例如：新增用户接口">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="interfacePath">接口请求路径</label>
+                    <input type="text" id="interfacePath" name="interface_path" placeholder="例如：GET /api/user/add">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="interfaceDescription">接口描述</label>
+                    <textarea id="interfaceDescription" name="interface_description" placeholder="例如：用于新增用户并生成初始用户信息" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="businessLogicDescription">业务逻辑描述</label>
+                    <textarea id="businessLogicDescription" name="business_logic_description" placeholder="详细描述接口的业务逻辑" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二页：请求参数和报文示例 -->
+        <div class="form-page" id="page2">
+            <div class="page-header">
+                <h3>第二步：请求配置</h3>
+                <p>配置请求参数和请求报文示例</p>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="requestParams">请求参数</label>
+                    <div class="dynamic-input-group">
+                        <div class="input-with-button">
+                            <input type="text" placeholder="输入请求参数" class="param-input">
+                            <button type="button" class="btn-add-param">添加</button>
+                        </div>
+                        <div class="params-list" id="requestParamsList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="requestBodyExample">请求报文示例</label>
+                    <textarea id="requestBodyExample" name="request_body_example" placeholder='请输入JSON格式的请求报文示例' rows="8" class="json-input"></textarea>
+                    <div class="json-validation-message" id="requestBodyValidation"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第三页：请求报文结构表 -->
+        <div class="form-page" id="page3">
+            <div class="page-header">
+                <h3>第三步：请求结构配置</h3>
+                <p>基于第二页的输入，自动生成请求结构表格</p>
+            </div>
+
+            <div class="structure-preview">
+                <h4>请求报文结构表</h4>
+                <div class="table-container">
+                    <table id="requestStructureTable" class="structure-table">
+                        <thead>
+                            <tr>
+                                <th>参数字段</th>
+                                <th>接收方式</th>
+                                <th>字段描述</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p class="table-note">提示：参数字段会自动从请求参数和请求报文中解析，您只需要填写字段描述即可。</p>
+            </div>
+        </div>
+
+        <!-- 第四页：响应报文示例 -->
+        <div class="form-page" id="page4">
+            <div class="page-header">
+                <h3>第四步：响应配置</h3>
+                <p>配置响应报文示例</p>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="responseBodyExample">响应报文示例</label>
+                    <textarea id="responseBodyExample" name="response_body_example" placeholder='请输入JSON格式的响应报文示例' rows="8" class="json-input"></textarea>
+                    <div class="json-validation-message" id="responseBodyValidation"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第五页：响应报文结构表 -->
+        <div class="form-page" id="page5">
+            <div class="page-header">
+                <h3>第五步：响应结构配置</h3>
+                <p>基于第四页的输入，自动生成响应结构表格</p>
+            </div>
+
+            <div class="structure-preview">
+                <h4>响应报文结构表</h4>
+                <div class="table-container">
+                    <table id="responseStructureTable" class="structure-table">
+                        <thead>
+                            <tr>
+                                <th>参数字段</th>
+                                <th>字段描述</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p class="table-note">提示：参数字段会自动从响应报文中解析，您只需要填写字段描述即可。</p>
+            </div>
+        </div>
+
+        <!-- 第六页：关联数据库表DDL -->
+        <div class="form-page" id="page6">
+            <div class="page-header">
+                <h3>第六步：数据库配置</h3>
+                <p>配置关联的数据库表DDL</p>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="databaseDdls">关联数据库表DDL</label>
+                    <div class="dynamic-input-group">
+                        <div class="ddl-input-group">
+                            <textarea placeholder="输入DDL语句" class="ddl-input" rows="6"></textarea>
+                            <button type="button" class="btn-add-ddl">添加DDL</button>
+                        </div>
+                        <div class="ddl-list" id="ddlList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第七页：生成Prompt -->
+        <div class="form-page" id="page7">
+            <div class="page-header">
+                <h3>第七步：生成Prompt</h3>
+                <p>确认信息并生成Prompt</p>
+            </div>
+
+            <div class="summary-section">
+                <h4>信息汇总</h4>
+                <div class="summary-content" id="summaryContent">
+                    <!-- 汇总信息将在这里显示 -->
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group button-group">
+                    <div class="button-container">
+                        <button type="button" id="generatePromptBtn" class="btn-generate">
+                            生成Prompt
+                        </button>
+                    </div>
+                    <div class="button-container">
+                        <div class="tooltip" id="aiEnhancedTooltip">
+                            <button type="button" id="generateAIEnhancedPromptBtn" class="btn-ai-enhanced">
+                                <span class="btn-text">AI增强生成</span>
+                            </button>
+                            <span class="tooltip-text" id="aiEnhancedTooltipText"></span>
+                        </div>
+                    </div>
+                    <div class="button-container">
+                        <button type="button" id="backToTasksBtn" class="btn-back-to-tasks">
+                            返回上一层
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- 导航按钮 -->
+    <div class="form-navigation">
+        <button type="button" id="prevBtn" class="btn-nav btn-secondary" disabled title="上一页">
+            ‹
+        </button>
+        <button type="button" id="nextBtn" class="btn-nav btn-primary" title="下一页">
+            ›
+        </button>
+    </div>
+</div>
+
+<!-- Prompt显示弹窗 -->
+<div id="promptModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">生成的Prompt</h3>
+            <span class="modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <!-- 加载状态 -->
+            <div class="loading-state" id="loadingState" style="display: none;">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+                <div class="loading-text">正在生成Prompt，请稍候...</div>
+            </div>
+
+            <!-- 结果状态 -->
+            <div class="result-state" id="resultState" style="display: none;">
+                <div class="prompt-content" id="promptContent"></div>
+                <div class="raw-markdown" id="rawMarkdown" style="display: none;"></div>
+            </div>
+
+            <!-- 错误状态 -->
+            <div class="error-state" id="errorState" style="display: none;">
+                <div class="error-icon">⚠️</div>
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+        </div>
+
+        <!-- 固定按钮区域 -->
+        <div class="modal-footer" id="modalFooter" style="display: none;">
+            <div class="prompt-actions">
+                <button type="button" id="copyPromptBtn" class="btn-copy">一键复制</button>
+                <button type="button" id="downloadPromptBtn" class="btn-download">下载为文件</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+// 表单数据存储
+let formData = {
+    interface_name: '',
+    interface_path: '',
+    interface_description: '',
+    business_logic_description: '',
+    request_params: [],
+    request_body_example: '',
+    request_structure_table: [],
+    response_body_example: '',
+    response_structure_table: [],
+    database_ddls: [],
+    project_id: "{{ project.id }}"
+};
+
+let currentPage = 1;
+const totalPages = 7;
+
+// 页面切换逻辑
+function showPage(pageNum) {
+    // 隐藏所有页面
+    document.querySelectorAll('.form-page').forEach(page => {
+        page.classList.remove('active');
+    });
+
+    // 显示目标页面
+    document.getElementById(`page${pageNum}`).classList.add('active');
+
+    // 更新导航按钮
+    updateNavigationButtons(pageNum);
+
+    // 如果是最后一页，更新汇总信息和AI增强按钮状态
+    if (pageNum === totalPages) {
+        updateSummary();
+        updateAIEnhancedButtonState();
+    }
+}
+
+
+
+function updateNavigationButtons(pageNum) {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    if (pageNum === 1) {
+        prevBtn.style.display = 'block';
+        prevBtn.disabled = true;
+        nextBtn.style.display = 'block';
+        nextBtn.disabled = false;
+    } else if (pageNum === totalPages) {
+        prevBtn.style.display = 'block';
+        prevBtn.disabled = false;
+        nextBtn.style.display = 'block';
+        nextBtn.disabled = true;
+    } else {
+        prevBtn.style.display = 'block';
+        prevBtn.disabled = false;
+        nextBtn.style.display = 'block';
+        nextBtn.disabled = false;
+    }
+}
+
+// 导航按钮事件
+document.getElementById('nextBtn').addEventListener('click', () => {
+    if (currentPage < totalPages) {
+        if (validateCurrentPage()) {
+            currentPage++;
+            showPage(currentPage);
+        }
+    }
+});
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+    if (currentPage > 1) {
+        currentPage--;
+        showPage(currentPage);
+    }
+});
+
+// 页面验证逻辑
+function validateCurrentPage() {
+    switch(currentPage) {
+        case 1:
+            return validatePage1();
+        case 2:
+            return validatePage2();
+        case 3:
+            return validatePage3();
+        case 4:
+            return validatePage4();
+        case 5:
+            return validatePage5();
+        case 6:
+            return validatePage6();
+        default:
+            return true;
+    }
+}
+
+function validatePage1() {
+    const fields = ['interfaceName', 'interfacePath', 'interfaceDescription', 'businessLogicDescription'];
+
+    fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        // 移除错误样式，因为现在允许空值
+        field.classList.remove('error');
+        // 总是保存数据，无论是否为空
+        formData[field.name] = field.value.trim();
+    });
+
+    // 总是返回true，因为现在允许空值
+    return true;
+}
+
+function validatePage2() {
+    const requestBodyExample = document.getElementById('requestBodyExample');
+
+    // 如果有内容，验证JSON格式；如果为空，则清除验证消息
+    if (requestBodyExample.value.trim()) {
+        try {
+            JSON.parse(requestBodyExample.value);
+            showValidationMessage('requestBodyValidation', 'JSON格式正确', 'success');
+            formData.request_body_example = requestBodyExample.value.trim();
+        } catch (e) {
+            showValidationMessage('requestBodyValidation', 'JSON格式错误：' + e.message, 'error');
+            // 即使JSON格式错误，也允许继续，因为现在不强制要求
+        }
+    } else {
+        // 清空验证消息
+        showValidationMessage('requestBodyValidation', '', 'neutral');
+        formData.request_body_example = '';
+    }
+
+    // 总是返回true，因为现在允许空值
+    return true;
+}
+
+function validatePage4() {
+    const responseBodyExample = document.getElementById('responseBodyExample');
+
+    // 如果有内容，验证JSON格式；如果为空，则清除验证消息
+    if (responseBodyExample.value.trim()) {
+        try {
+            JSON.parse(responseBodyExample.value);
+            showValidationMessage('responseBodyValidation', 'JSON格式正确', 'success');
+            formData.response_body_example = responseBodyExample.value.trim();
+        } catch (e) {
+            showValidationMessage('responseBodyValidation', 'JSON格式错误：' + e.message, 'error');
+            // 即使JSON格式错误，也允许继续，因为现在不强制要求
+        }
+    } else {
+        // 清空验证消息
+        showValidationMessage('responseBodyValidation', '', 'neutral');
+        formData.response_body_example = '';
+    }
+
+    // 总是返回true，因为现在允许空值
+    return true;
+}
+
+// 其他页面验证函数
+function validatePage3() { return true; }
+function validatePage5() { return true; }
+function validatePage6() { return true; }
+
+// 显示验证消息
+function showValidationMessage(elementId, message, type) {
+    const element = document.getElementById(elementId);
+    element.textContent = message;
+    element.className = `json-validation-message ${type}`;
+}
+
+// 更新汇总信息
+function updateSummary() {
+    const summaryContent = document.getElementById('summaryContent');
+    const interfaceName = document.getElementById('interfaceName').value;
+    const interfacePath = document.getElementById('interfacePath').value;
+    const interfaceDescription = document.getElementById('interfaceDescription').value;
+    const businessLogicDescription = document.getElementById('businessLogicDescription').value;
+
+    summaryContent.innerHTML = `
+        <div class="summary-item">
+            <strong>接口名称：</strong>${interfaceName}
+        </div>
+        <div class="summary-item">
+            <strong>接口路径：</strong>${interfacePath}
+        </div>
+        <div class="summary-item">
+            <strong>接口描述：</strong>${interfaceDescription}
+        </div>
+        <div class="summary-item">
+            <strong>业务逻辑：</strong>${businessLogicDescription.length > 100 ? businessLogicDescription.substring(0, 100) + '...' : businessLogicDescription}
+        </div>
+        <div class="summary-item">
+            <strong>请求参数：</strong>${formData.request_params.length} 个
+        </div>
+        <div class="summary-item">
+            <strong>数据库表：</strong>${formData.database_ddls.length} 个
+        </div>
+    `;
+}
+
+// 验证AI增强的必填字段
+function validateAIEnhancedRequirements() {
+    const interfaceName = document.getElementById('interfaceName').value.trim();
+    const responseBodyExample = document.getElementById('responseBodyExample').value.trim();
+    const ddlList = document.getElementById('ddlList');
+    const hasDDL = ddlList && ddlList.children && ddlList.children.length > 0;
+
+    let missingFields = [];
+
+    if (!interfaceName) {
+        missingFields.push('接口名称');
+    }
+
+    if (!responseBodyExample) {
+        missingFields.push('响应报文示例');
+    }
+
+    if (!hasDDL) {
+        missingFields.push('关联数据库表DDL');
+    }
+
+    return missingFields.length === 0;
+}
+
+// 更新AI增强按钮状态
+function updateAIEnhancedButtonState() {
+    const btn = document.getElementById('generateAIEnhancedPromptBtn');
+    if (!btn) {
+        console.warn('AI增强按钮未找到');
+        return;
+    }
+
+    const isValid = validateAIEnhancedRequirements();
+    btn.disabled = !isValid;
+    updateAIEnhancedTooltip();
+
+    // 调试信息
+    console.log('AI增强按钮状态更新:', {
+        isValid: isValid,
+        disabled: btn.disabled,
+        interfaceName: document.getElementById('interfaceName')?.value.trim() || '',
+        responseBodyExample: document.getElementById('responseBodyExample')?.value.trim() || '',
+        ddlCount: document.getElementById('ddlList')?.children.length || 0
+    });
+}
+
+// 更新AI增强按钮的tooltip文本
+function updateAIEnhancedTooltip() {
+    const tooltipText = document.getElementById('aiEnhancedTooltipText');
+    const interfaceName = document.getElementById('interfaceName').value.trim();
+    const responseBodyExample = document.getElementById('responseBodyExample').value.trim();
+    const ddlList = document.getElementById('ddlList');
+    const hasDDL = ddlList && ddlList.children.length > 0;
+
+    let missingFields = [];
+
+    if (!interfaceName) {
+        missingFields.push('接口名称');
+    }
+
+    if (!responseBodyExample) {
+        missingFields.push('响应报文示例');
+    }
+
+    if (!hasDDL) {
+        missingFields.push('关联数据库表DDL');
+    }
+
+    if (missingFields.length > 0) {
+        tooltipText.textContent = `需要填写以下字段：\n${missingFields.join('\n')}`;
+    } else {
+        tooltipText.textContent = '点击进行AI增强处理';
+    }
+}
+
+// 初始化页面
+document.addEventListener('DOMContentLoaded', function() {
+    showPage(1);
+
+    // 绑定其他事件监听器
+    initializeDynamicInputs();
+    initializeJsonValidation();
+    initializeTableGeneration();
+
+    // 绑定生成Prompt按钮事件
+    document.getElementById('generatePromptBtn').addEventListener('click', generatePrompt);
+
+    // 绑定AI增强Prompt按钮事件
+    document.getElementById('generateAIEnhancedPromptBtn').addEventListener('click', generateAIEnhancedPrompt);
+
+    // 绑定返回任务类型选择按钮事件
+    document.getElementById('backToTasksBtn').addEventListener('click', function() {
+        const projectId = "{{ project.id }}";
+        window.location.href = `/projects/${projectId}/tasks`;
+    });
+
+    // 绑定下载按钮事件
+    document.getElementById('downloadPromptBtn').addEventListener('click', downloadPrompt);
+
+    // 绑定重试按钮事件
+    document.getElementById('retryBtn').addEventListener('click', function() {
+        // 关闭当前模态框并重置状态
+        document.getElementById('promptModal').classList.remove('show');
+        setTimeout(() => {
+            resetModalState();
+        }, 300);
+    });
+
+    // 初始化AI增强按钮状态
+    updateAIEnhancedButtonState();
+
+    // 确保在页面加载后立即检查一次状态
+    setTimeout(updateAIEnhancedButtonState, 100);
+});
+
+// 动态输入功能（请求参数）
+function initializeDynamicInputs() {
+    // 请求参数添加功能
+    document.querySelector('.btn-add-param').addEventListener('click', function() {
+        const input = this.previousElementSibling;
+        const paramValue = input.value.trim();
+
+        if (paramValue) {
+            formData.request_params.push(paramValue);
+            updateRequestParamsList();
+            input.value = '';
+
+            // 自动生成请求结构表
+            generateRequestStructureTable();
+        }
+    });
+
+    // DDL添加功能
+    document.querySelector('.btn-add-ddl').addEventListener('click', function() {
+        const textarea = this.previousElementSibling;
+        const ddlValue = textarea.value.trim();
+
+        if (ddlValue) {
+            formData.database_ddls.push(ddlValue);
+            updateDdlList();
+            textarea.value = '';
+        }
+    });
+}
+
+function updateRequestParamsList() {
+    const paramsList = document.getElementById('requestParamsList');
+    paramsList.innerHTML = '';
+
+    formData.request_params.forEach((param, index) => {
+        const paramItem = document.createElement('div');
+        paramItem.className = 'param-item';
+        paramItem.innerHTML = `
+            <span>${param}</span>
+            <button type="button" class="btn-remove" onclick="removeRequestParam(${index})">×</button>
+        `;
+        paramsList.appendChild(paramItem);
+    });
+}
+
+function updateDdlList() {
+    const ddlList = document.getElementById('ddlList');
+    ddlList.innerHTML = '';
+
+    formData.database_ddls.forEach((ddl, index) => {
+        const ddlItem = document.createElement('div');
+        ddlItem.className = 'ddl-item';
+        ddlItem.innerHTML = `
+            <pre><code>${ddl}</code></pre>
+            <button type="button" class="btn-remove" onclick="removeDdl(${index})">删除</button>
+        `;
+        ddlList.appendChild(ddlItem);
+    });
+
+    // 更新AI增强按钮状态
+    updateAIEnhancedButtonState();
+}
+
+function removeRequestParam(index) {
+    formData.request_params.splice(index, 1);
+    updateRequestParamsList();
+    generateRequestStructureTable();
+}
+
+function removeDdl(index) {
+    formData.database_ddls.splice(index, 1);
+    updateDdlList();
+}
+
+// JSON验证功能
+function initializeJsonValidation() {
+    // 请求报文验证
+    document.getElementById('requestBodyExample').addEventListener('input', function() {
+        validateJsonInput(this.value, 'requestBodyValidation');
+        if (this.value.trim()) {
+            generateRequestStructureTable();
+        }
+        updateAIEnhancedButtonState();
+    });
+
+    // 响应报文验证
+    document.getElementById('responseBodyExample').addEventListener('input', function() {
+        validateJsonInput(this.value, 'responseBodyValidation');
+        if (this.value.trim()) {
+            generateResponseStructureTable();
+        }
+        updateAIEnhancedButtonState();
+    });
+
+    // 接口名称输入验证
+    document.getElementById('interfaceName').addEventListener('input', function() {
+        updateAIEnhancedButtonState();
+    });
+}
+
+function validateJsonInput(jsonString, validationElementId) {
+    if (!jsonString.trim()) {
+        showValidationMessage(validationElementId, '', 'neutral');
+        return;
+    }
+
+    try {
+        JSON.parse(jsonString);
+        showValidationMessage(validationElementId, 'JSON格式正确', 'success');
+    } catch (e) {
+        showValidationMessage(validationElementId, 'JSON格式错误：' + e.message, 'error');
+    }
+}
+
+// 表格生成功能
+function initializeTableGeneration() {
+    // 页面切换时生成表格
+    document.getElementById('nextBtn').addEventListener('click', function() {
+        if (currentPage === 2) {
+            setTimeout(() => generateRequestStructureTable(), 100);
+        } else if (currentPage === 4) {
+            setTimeout(() => generateResponseStructureTable(), 100);
+        }
+    });
+}
+
+function generateRequestStructureTable() {
+    const requestBody = document.getElementById('requestBodyExample').value.trim();
+    let allParams = [];
+
+    // 处理请求参数
+    if (formData.request_params.length > 0) {
+        const paramFields = formData.request_params.map(param => ({
+            parameter: param,
+            source: 'request_param',
+            description: ''
+        }));
+        allParams = [...allParams, ...paramFields];
+    }
+
+    // 处理请求报文
+    if (requestBody) {
+        try {
+            const jsonData = JSON.parse(requestBody);
+            const fields = extractFieldsFromJson(jsonData, 'request_body');
+            allParams = [...allParams, ...fields];
+        } catch (e) {
+            console.error('解析请求报文失败:', e);
+        }
+    }
+
+    // 如果有任何参数，生成结构表
+    if (allParams.length > 0) {
+        formData.request_structure_table = allParams;
+        renderRequestStructureTable(allParams);
+    } else {
+        // 清空结构表
+        formData.request_structure_table = [];
+        renderRequestStructureTable([]);
+    }
+}
+
+function generateResponseStructureTable() {
+    const responseBody = document.getElementById('responseBodyExample').value.trim();
+    if (!responseBody) return;
+
+    try {
+        const jsonData = JSON.parse(responseBody);
+        const fields = extractFieldsFromJson(jsonData, 'response_body');
+
+        formData.response_structure_table = fields;
+        renderResponseStructureTable(fields);
+    } catch (e) {
+        console.error('生成响应结构表失败:', e);
+    }
+}
+
+function extractFieldsFromJson(jsonData, source) {
+    const fields = [];
+
+    function traverse(obj, prefix = '') {
+        if (typeof obj === 'object' && obj !== null) {
+            Object.keys(obj).forEach(key => {
+                const fullKey = prefix ? `${prefix}.${key}` : key;
+                fields.push({
+                    parameter: fullKey,
+                    source: source,
+                    description: ''
+                });
+                traverse(obj[key], fullKey);
+            });
+        }
+    }
+
+    traverse(jsonData);
+    return fields;
+}
+
+function renderRequestStructureTable(fields) {
+    const tbody = document.querySelector('#requestStructureTable tbody');
+    tbody.innerHTML = '';
+
+    fields.forEach((field, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${field.parameter}</td>
+            <td>${field.source === 'request_param' ? '请求参数' : '请求报文'}</td>
+            <td>
+                <input type="text"
+                       placeholder="请输入字段描述"
+                       value="${field.description}"
+                       oninput="updateRequestFieldDescription(${index}, this.value)">
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderResponseStructureTable(fields) {
+    const tbody = document.querySelector('#responseStructureTable tbody');
+    tbody.innerHTML = '';
+
+    fields.forEach((field, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${field.parameter}</td>
+            <td>
+                <input type="text"
+                       placeholder="请输入字段描述"
+                       value="${field.description}"
+                       oninput="updateResponseFieldDescription(${index}, this.value)">
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateRequestFieldDescription(index, description) {
+    if (formData.request_structure_table[index]) {
+        formData.request_structure_table[index].description = description;
+    }
+}
+
+function updateResponseFieldDescription(index, description) {
+    if (formData.response_structure_table[index]) {
+        formData.response_structure_table[index].description = description;
+    }
+}
+
+// 生成Prompt
+async function generatePrompt() {
+    // 确保所有数据都被收集
+    collectAllFormData();
+
+    // 显示加载模态框
+    showLoadingModal('正在生成Prompt，请稍候...');
+
+    try {
+        const response = await fetch('/tasks/generate-interface-prompt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showPromptModal(result.prompt_content);
+        } else {
+            showErrorModal('生成失败：' + result.message);
+        }
+    } catch (error) {
+        showErrorModal('网络错误：' + error.message);
+    }
+}
+
+// 生成AI增强Prompt
+async function generateAIEnhancedPrompt() {
+    // 再次验证必填字段（双重保险）
+    if (!validateAIEnhancedRequirements()) {
+        const missingFields = [];
+        const interfaceName = document.getElementById('interfaceName').value.trim();
+        const responseBodyExample = document.getElementById('responseBodyExample').value.trim();
+        const ddlList = document.getElementById('ddlList');
+        const hasDDL = ddlList && ddlList.children && ddlList.children.length > 0;
+
+        if (!interfaceName) missingFields.push('接口名称');
+        if (!responseBodyExample) missingFields.push('响应报文示例');
+        if (!hasDDL) missingFields.push('关联数据库表DDL');
+
+        showErrorModal(`AI增强功能需要填写以下字段：\n${missingFields.join('\n')}`);
+        updateAIEnhancedButtonState(); // 重新更新按钮状态
+        return;
+    }
+
+    // 确保所有数据都被收集
+    collectAllFormData();
+
+    // 显示加载模态框
+    showLoadingModal('正在进行AI增强处理，请稍候...');
+
+    try {
+        const response = await fetch('/tasks/generate-ai-enhanced-prompt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showPromptModal(result.prompt_content);
+        } else {
+            showErrorModal('AI增强生成失败：' + result.message);
+        }
+    } catch (error) {
+        showErrorModal('网络错误：' + error.message);
+    }
+}
+
+// 收集所有表单数据
+function collectAllFormData() {
+    // 确保所有输入框的值都被收集
+    const fields = ['interfaceName', 'interfacePath', 'interfaceDescription', 'businessLogicDescription', 'requestBodyExample', 'responseBodyExample'];
+    fields.forEach(fieldId => {
+        const element = document.getElementById(fieldId);
+        if (element) {
+            const fieldName = element.name || fieldId.toLowerCase().replace('interface', 'interface_');
+            formData[fieldName] = element.value.trim();
+        }
+    });
+}
+
+// 显示Prompt弹窗
+function showPromptModal(promptContent) {
+    const modal = document.getElementById('promptModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const promptContentDiv = document.getElementById('promptContent');
+    const rawMarkdownDiv = document.getElementById('rawMarkdown');
+    const loadingState = document.getElementById('loadingState');
+    const resultState = document.getElementById('resultState');
+    const errorState = document.getElementById('errorState');
+
+    // 设置标题
+    modalTitle.textContent = '生成的Prompt';
+
+    // 隐藏加载和错误状态，显示结果状态和底部按钮
+    loadingState.style.display = 'none';
+    errorState.style.display = 'none';
+    resultState.style.display = 'block';
+
+    // 显示底部按钮区域
+    const modalFooter = document.getElementById('modalFooter');
+    if (modalFooter) {
+        modalFooter.style.display = 'block';
+    }
+
+    // 保存原始Markdown内容用于复制
+    rawMarkdownDiv.textContent = promptContent;
+
+    // 渲染Markdown为HTML进行预览
+    const htmlContent = renderMarkdownToHtml(promptContent);
+    promptContentDiv.innerHTML = htmlContent;
+
+    // 使用.show类来居中显示弹窗
+    modal.classList.add('show');
+}
+
+// 显示加载状态
+function showLoadingModal(title = '正在生成Prompt，请稍候...') {
+    const modal = document.getElementById('promptModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const loadingState = document.getElementById('loadingState');
+    const resultState = document.getElementById('resultState');
+    const errorState = document.getElementById('errorState');
+
+    // 设置标题
+    modalTitle.textContent = '生成中';
+
+    // 显示加载状态，隐藏其他状态
+    loadingState.style.display = 'block';
+    resultState.style.display = 'none';
+    errorState.style.display = 'none';
+
+    // 使用.show类来居中显示弹窗
+    modal.classList.add('show');
+}
+
+// 显示错误状态
+function showErrorModal(errorMessage) {
+    const modal = document.getElementById('promptModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const errorMessageDiv = document.getElementById('errorMessage');
+    const loadingState = document.getElementById('loadingState');
+    const resultState = document.getElementById('resultState');
+    const errorState = document.getElementById('errorState');
+
+    // 设置标题
+    modalTitle.textContent = '生成失败';
+
+    // 设置错误信息
+    errorMessageDiv.textContent = errorMessage;
+
+    // 显示错误状态，隐藏其他状态
+    loadingState.style.display = 'none';
+    resultState.style.display = 'none';
+    errorState.style.display = 'block';
+
+    // 使用.show类来居中显示弹窗
+    modal.classList.add('show');
+}
+
+// 重置模态框状态
+function resetModalState() {
+    const modalTitle = document.getElementById('modalTitle');
+    const loadingState = document.getElementById('loadingState');
+    const resultState = document.getElementById('resultState');
+    const errorState = document.getElementById('errorState');
+    const modalFooter = document.getElementById('modalFooter');
+
+    // 重置标题
+    modalTitle.textContent = '生成的Prompt';
+
+    // 重置显示状态
+    loadingState.style.display = 'none';
+    resultState.style.display = 'none';
+    errorState.style.display = 'none';
+
+    // 隐藏底部按钮区域
+    if (modalFooter) {
+        modalFooter.style.display = 'none';
+    }
+}
+
+// 增强的Markdown渲染函数
+function renderMarkdownToHtml(markdown) {
+    // 预处理：按行分割并处理
+    const lines = markdown.split('\n');
+    let html = '';
+    let inCodeBlock = false;
+    let codeBlockLanguage = '';
+    let codeBlockContent = [];
+    let tableRows = [];
+    let inTable = false;
+    let listItems = [];
+    let inList = false;
+    let listType = ''; // 'ul' 或 'ol'
+    let prevLineWasEmpty = false;
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+
+        // 代码块处理
+        if (line.startsWith('```')) {
+            if (inCodeBlock) {
+                // 结束代码块
+                const lang = codeBlockLanguage || 'text';
+                const highlightedCode = highlightCode(codeBlockContent.join('\n'), lang.toLowerCase());
+                html += `<pre class="code-block" data-lang="${lang}"><code class="language-${lang}">${highlightedCode}</code></pre>`;
+                inCodeBlock = false;
+                codeBlockContent = [];
+                codeBlockLanguage = '';
+            } else {
+                // 开始代码块
+                inCodeBlock = true;
+                codeBlockLanguage = line.substring(3).trim();
+            }
+            continue;
+        }
+
+        if (inCodeBlock) {
+            codeBlockContent.push(line);
+            continue;
+        }
+
+        // 处理标题
+        if (line.match(/^#{1,6}\s/)) {
+            const level = line.match(/^(#{1,6})/)[1].length;
+            const text = line.substring(level + 1).trim();
+            html += `<h${level} class="markdown-heading">${text}</h${level}>`;
+            continue;
+        }
+
+        // 处理分割线
+        if (line.match(/^[-*_]{3,}$/)) {
+            html += '<hr class="markdown-hr">';
+            continue;
+        }
+
+        // 处理表格
+        if (line.includes('|')) {
+            const cells = line.split('|').map(cell => cell.trim());
+            if (cells.length > 1 && cells.every(cell => cell !== '')) {
+                if (!inTable) {
+                    inTable = true;
+                    tableRows = [];
+                }
+                tableRows.push(cells);
+            } else if (inTable) {
+                // 结束表格
+                if (tableRows.length > 0) {
+                    html += renderTable(tableRows);
+                }
+                inTable = false;
+                tableRows = [];
+            }
+        } else if (inTable) {
+            // 结束表格
+            if (tableRows.length > 0) {
+                html += renderTable(tableRows);
+            }
+            inTable = false;
+            tableRows = [];
+        }
+
+        // 处理列表
+        if (line.match(/^(\s*)[-\*\+]\s/) || line.match(/^(\s*)\d+\.\s/)) {
+            const match = line.match(/^(\s*)([-\*\+]|\d+\.)\s(.*)$/);
+            if (match) {
+                const indent = match[1].length;
+                const marker = match[2];
+                const content = match[3];
+
+                if (!inList || indent !== listItems[listItems.length - 1]?.indent) {
+                    // 开始新列表或嵌套列表
+                    if (inList) {
+                        html += renderList(listItems, listType);
+                        listItems = [];
+                    }
+                    inList = true;
+                    listType = marker.match(/\d+\./) ? 'ol' : 'ul';
+                }
+
+                listItems.push({
+                    content: processInlineElements(content),
+                    indent: indent
+                });
+            }
+        } else if (inList && line.trim() === '') {
+            // 空行，保持列表状态
+        } else if (inList) {
+            // 结束列表
+            html += renderList(listItems, listType);
+            inList = false;
+            listItems = [];
+        }
+
+        // 处理引用
+        if (line.startsWith('> ')) {
+            const content = line.substring(2);
+            html += `<blockquote class="markdown-quote">${processInlineElements(content)}</blockquote>`;
+            continue;
+        }
+
+        // 处理普通段落
+        if (line.trim() !== '' && !inTable && !inList) {
+            // 合并连续的段落，避免过多空行
+            if (prevLineWasEmpty && html.lastIndexOf('<br>') === html.length - 4) {
+                html = html.slice(0, -4); // 移除最后一个<br>
+            }
+            html += `<p class="markdown-paragraph">${processInlineElements(line)}</p>`;
+        } else if (line.trim() === '' && !inTable && !inList) {
+            // 避免连续的空行
+            if (!prevLineWasEmpty) {
+                html += '<br>';
+            }
+        }
+
+        prevLineWasEmpty = line.trim() === '';
+    }
+
+    // 处理剩余的内容
+    if (inTable && tableRows.length > 0) {
+        html += renderTable(tableRows);
+    }
+    if (inList && listItems.length > 0) {
+        html += renderList(listItems, listType);
+    }
+
+    return html;
+}
+
+// 渲染表格
+function renderTable(rows) {
+    if (rows.length === 0) return '';
+
+    let html = '<table class="markdown-table">';
+
+    // 检查是否有分隔行来确定表头
+    let hasHeader = false;
+    if (rows.length >= 2) {
+        const secondRow = rows[1];
+        hasHeader = secondRow.some(cell =>
+            cell.trim().match(/^:?-+:?$/) // 匹配表格分隔符
+        );
+    }
+
+    if (hasHeader && rows.length > 2) {
+        // 有表头的情况
+        html += '<thead><tr>';
+        rows[0].forEach(cell => {
+            html += `<th>${processInlineElements(cell.trim())}</th>`;
+        });
+        html += '</tr></thead>';
+
+        html += '<tbody>';
+        for (let i = 2; i < rows.length; i++) {
+            html += '<tr>';
+            rows[i].forEach(cell => {
+                html += `<td>${processInlineElements(cell.trim())}</td>`;
+            });
+            html += '</tr>';
+        }
+        html += '</tbody>';
+    } else {
+        // 无表头的情况，所有行都是数据行
+        html += '<tbody>';
+        rows.forEach(row => {
+            html += '<tr>';
+            row.forEach(cell => {
+                html += `<td>${processInlineElements(cell.trim())}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody>';
+    }
+
+    html += '</table>';
+    return html;
+}
+
+// 渲染列表
+function renderList(items, type) {
+    if (items.length === 0) return '';
+
+    let html = `<${type} class="markdown-list">`;
+    items.forEach(item => {
+        html += `<li>${item.content}</li>`;
+    });
+    html += `</${type}>`;
+
+    return html;
+}
+
+// 处理内联元素
+function processInlineElements(text) {
+    return text
+        // 粗体
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/__(.*?)__/g, '<strong>$1</strong>')
+
+        // 斜体
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/_(.*?)_/g, '<em>$1</em>')
+
+        // 删除线
+        .replace(/~~(.*?)~~/g, '<del>$1</del>')
+
+        // 内联代码
+        .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
+
+        // 链接
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+
+        // 自动链接
+        .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
+
+        // 任务列表
+        .replace(/-\s*\[([ x])\]\s*(.+)/gi, (match, checked, text) => {
+            const isChecked = checked.toLowerCase() === 'x';
+            return `<label class="task-item"><input type="checkbox" ${isChecked ? 'checked' : ''} disabled> ${text}</label>`;
+        })
+
+        // 高亮文本
+        .replace(/==(.*?)==/g, '<mark>$1</mark>')
+
+        // 上标和下标
+        .replace(/\^([^\s]+)\^/g, '<sup>$1</sup>')
+        .replace(/~([^\s]+)~/g, '<sub>$1</sub>');
+}
+
+// 简单的代码高亮
+function highlightCode(code, language) {
+    // 常见的编程语言关键字
+    const keywords = {
+        javascript: ['function', 'const', 'let', 'var', 'if', 'else', 'for', 'while', 'return', 'class', 'extends', 'import', 'export', 'default', 'try', 'catch', 'finally', 'async', 'await', 'new', 'this', 'super'],
+        python: ['def', 'class', 'if', 'elif', 'else', 'for', 'while', 'return', 'import', 'from', 'try', 'except', 'finally', 'with', 'as', 'lambda', 'and', 'or', 'not', 'in', 'is', 'None', 'True', 'False'],
+        java: ['public', 'private', 'protected', 'class', 'interface', 'extends', 'implements', 'static', 'final', 'void', 'int', 'String', 'boolean', 'if', 'else', 'for', 'while', 'return', 'try', 'catch', 'finally', 'new', 'this', 'super'],
+        sql: ['SELECT', 'FROM', 'WHERE', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'TABLE', 'ALTER', 'DROP', 'PRIMARY', 'KEY', 'FOREIGN', 'REFERENCES', 'NOT', 'NULL', 'AUTO_INCREMENT'],
+        json: [] // JSON不需要关键字高亮
+    };
+
+    const langKeywords = keywords[language] || keywords.javascript;
+
+    if (langKeywords.length === 0) {
+        return escapeHtml(code);
+    }
+
+    // 创建正则表达式来匹配关键字
+    const keywordRegex = new RegExp(`\\b(${langKeywords.join('|')})\\b`, 'g');
+
+    // 对代码进行转义，然后高亮关键字
+    let highlighted = escapeHtml(code);
+
+    // 高亮关键字
+    highlighted = highlighted.replace(keywordRegex, '<span class="code-keyword">$1</span>');
+
+    // 高亮字符串
+    highlighted = highlighted.replace(/(["'`])((?:\\.|(?!\1)[^\\])*?)\1/g, '<span class="code-string">$1$2$1</span>');
+
+    // 高亮注释
+    if (language === 'javascript' || language === 'java') {
+        highlighted = highlighted.replace(/(\/\/.*$)/gm, '<span class="code-comment">$1</span>');
+        highlighted = highlighted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="code-comment">$1</span>');
+    } else if (language === 'python') {
+        highlighted = highlighted.replace(/(#.*$)/gm, '<span class="code-comment">$1</span>');
+        highlighted = highlighted.replace(/("""[\s\S]*?""")|('''[\s\S]*?''')/g, '<span class="code-comment">$1</span>');
+    } else if (language === 'sql') {
+        highlighted = highlighted.replace(/(--.*$)/gm, '<span class="code-comment">$1</span>');
+        highlighted = highlighted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="code-comment">$1</span>');
+    }
+
+    // 高亮数字
+    highlighted = highlighted.replace(/\b\d+(\.\d+)?\b/g, '<span class="code-number">$&</span>');
+
+    return highlighted;
+}
+
+// HTML转义
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// 复制Prompt（复制原始Markdown）
+document.getElementById('copyPromptBtn').addEventListener('click', () => {
+    const rawMarkdown = document.getElementById('rawMarkdown').textContent;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(rawMarkdown).then(() => {
+            showCopySuccess();
+        }).catch(err => {
+            console.error('复制失败:', err);
+            fallbackCopyTextToClipboard(rawMarkdown);
+        });
+    } else {
+        fallbackCopyTextToClipboard(rawMarkdown);
+    }
+});
+
+// 下载Prompt为文件
+function downloadPrompt() {
+    const rawMarkdown = document.getElementById('rawMarkdown').textContent;
+    const interfaceName = document.getElementById('interfaceName').value || 'interface_prompt';
+    const fileName = `${interfaceName.replace(/[^a-zA-Z0-9]/g, '_')}_prompt.md`;
+
+    const blob = new Blob([rawMarkdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // 文件下载成功，无需提示
+}
+
+// 显示复制成功提示
+function showCopySuccess() {
+    const btn = document.getElementById('copyPromptBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '复制成功！';
+    btn.style.background = '#4CAF50';
+
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.style.background = '';
+    }, 2000);
+}
+
+// 备用复制方法
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        document.execCommand('copy');
+        showCopySuccess();
+    } catch (err) {
+        console.error('备用复制方法失败:', err);
+        alert('复制失败，请手动复制');
+    }
+
+    document.body.removeChild(textArea);
+}
+
+// 关闭弹窗
+document.querySelector('.modal-close').addEventListener('click', () => {
+    document.getElementById('promptModal').classList.remove('show');
+    // 延迟重置状态，确保关闭动画完成
+    setTimeout(() => {
+        resetModalState();
+    }, 300);
+});
+
+// 点击弹窗外部关闭
+window.addEventListener('click', (event) => {
+    const modal = document.getElementById('promptModal');
+    if (event.target === modal) {
+        modal.classList.remove('show');
+        // 延迟重置状态，确保关闭动画完成
+        setTimeout(() => {
+            resetModalState();
+        }, 300);
+    }
+});
+</script>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

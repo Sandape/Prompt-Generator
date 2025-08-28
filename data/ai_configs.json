@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "user_id": 1,
+    "api_key": "ailab_OHeaW3lvtnvxQOL+3AK6U6HJti2L4fWi7O34AbWOa5kb9UOjFJ6qphnke+FFKkKTCr4+yJBfT1oOwgOVvtxWnX3EuMoyq7m4VFbKQqCoIcXAGkAA/UfYt/s=",
+    "api_url": "https://lab.iwhalecloud.com/gpt-proxy/v1/chat/completions",
+    "model_name": "gpt-4-omni",
+    "created_at": "2025-08-27 17:20:50.495581",
+    "updated_at": "2025-08-27 17:20:50.495581"
+  },
+  {
+    "id": 2,
+    "user_id": 4,
+    "api_key": "ailab_OHeaW3lvtnvxQOL+3AK6U6HJti2L4fWi7O34AbWOa5kb9UOjFJ6qphnke+FFKkKTCr4+yJBfT1oOwgOVvtxWnX3EuMoyq7m4VFbKQqCoIcXAGkAA/UfYt/s=",
+    "api_url": "https://lab.iwhalecloud.com/gpt-proxy/v1/chat/completions",
+    "model_name": "gpt-4-omni",
+    "created_at": "2025-08-27 19:56:44.026219",
+    "updated_at": "2025-08-27 19:56:44.026219"
+  }
+]

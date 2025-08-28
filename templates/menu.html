@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}菜单 - Prompt Generator{% endblock %}
+
+{% block content %}
+<h1>Prompt Generator</h1>
+<p class="app-description">
+    一款沉浸式Prompt构建工具<br>-<br>
+    帮助您走完设计方案到AI Agent的最后一里地
+</p>
+
+<div class="menu-container">
+    <div class="menu-grid">
+        <a href="/batch-translate" class="menu-item">
+            <div class="menu-icon">📝</div>
+            <div class="menu-title">批量转译</div>
+            <div class="menu-description">批量处理多个文档的翻译任务</div>
+        </a>
+
+        <a href="/projects" class="menu-item">
+            <div class="menu-icon">✨</div>
+            <div class="menu-title">单次精译</div>
+            <div class="menu-description">单个文档的精细翻译服务</div>
+        </a>
+    </div>
+</div>
+
+<div class="menu-buttons">
+    <a href="/profile" class="btn btn-secondary">
+        <span class="material-icons" style="vertical-align: middle; margin-right: 0.5rem;">person</span>
+        个人中心
+    </a>
+    <form action="/auth/logout" method="post">
+        <button type="submit" class="btn btn-secondary">
+            <span class="material-icons" style="vertical-align: middle; margin-right: 0.5rem;">logout</span>
+            退出登录
+        </button>
+    </form>
+</div>
+{% endblock %}

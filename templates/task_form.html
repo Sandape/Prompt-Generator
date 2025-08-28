@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{{ task_name }} - {{ project.name }} - Prompt Generator{% endblock %}
+
+{% block content %}
+<div class="task-header">
+    <h1>{{ project.name }}</h1>
+    <h2>{{ task_name }}</h2>
+    <p class="task-description">{{ task_description }}</p>
+</div>
+
+<div class="not-implemented">
+    <div class="not-implemented-icon">🚧</div>
+    <h2>{{ task_name }}</h2>
+    <p>{{ task_description }}</p>
+    <p style="margin-top: 1rem; color: var(--text-secondary);">此功能正在开发中，敬请期待...</p>
+    <div class="navigation-buttons">
+        <a href="/projects/{{ project.id }}/tasks" class="btn btn-primary">返回任务类型选择</a>
+        <a href="/projects" class="btn btn-secondary">返回项目列表</a>
+    </div>返回任务类型选择
+</div>
+{% endblock %}
