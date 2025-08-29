@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d9848b55-46c3-413c-b49b-e2731f0b9d01" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/login.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/login.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routers/project_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/routers/project_router.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routers/task_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/routers/task_router.py" afterDir="false" />
-    </list>
+    <list default="true" id="d9848b55-46c3-413c-b49b-e2731f0b9d01" name="Changes" comment="bug-fix-prompt" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -72,11 +66,24 @@
       <workItem from="1756215892332" duration="1029000" />
       <workItem from="1756258176062" duration="26743000" />
       <workItem from="1756344013084" duration="9247000" />
-      <workItem from="1756430991141" duration="1764000" />
+      <workItem from="1756430991141" duration="2123000" />
     </task>
+    <task id="LOCAL-00001" summary="bug-fix-prompt">
+      <option name="closed" value="true" />
+      <created>1756433307770</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1756433307770</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="bug-fix-prompt" />
+    <option name="LAST_COMMIT_MESSAGE" value="bug-fix-prompt" />
   </component>
 </project>
