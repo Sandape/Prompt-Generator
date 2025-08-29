@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from auth import get_current_user
 from storage import storage
-from models import InterfaceTaskRequest, InterfaceTaskResponse, RequestParamField, ResponseField
+from models import InterfaceTaskRequest, InterfaceTaskResponse, RequestParamField, ResponseField, BugFixTaskRequest
 import json
 import httpx
 from datetime import datetime
@@ -101,7 +101,7 @@ async def get_fault_task_form(project_id: int, request: Request, token_data: dic
         if project.user_id != user.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权访问此项目")
 
-        return templates.TemplateResponse("task_form.html", {
+        return templates.TemplateResponse("bug_fix_form.html", {
             "request": request,
             "project": project,
             "task_type": "fault",
@@ -525,3 +525,57 @@ AI配置信息:
 
     except Exception as e:
         print(f"记录AI调用日志失败: {str(e)}")
+
+@router.post("/generate-bug-fix-prompt", response_model=InterfaceTaskResponse)
+async def generate_bug_fix_prompt(request: BugFixTaskRequest, token_data: dict = Depends(get_current_user)):
+    """生成故障类任务的Prompt"""
+    try:
+        user = storage.get_user_by_email(token_data.email)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在")
+
+        project = storage.get_project_by_id(request.project_id)
+        if not project:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="项目不存在")
+
+        if project.user_id != user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权访问此项目")
+
+        # 生成Prompt内容
+        prompt_content = generate_bug_fix_prompt_content(request, user.username, project)
+
+        return InterfaceTaskResponse(
+            success=True,
+            message="故障类Prompt生成成功",
+            prompt_content=prompt_content
+        )
+
+    except Exception as e:
+        return InterfaceTaskResponse(
+            success=False,
+            message=f"生成故障类Prompt失败: {str(e)}"
+        )
+
+def generate_bug_fix_prompt_content(request: BugFixTaskRequest, username: str, project) -> str:
+    """生成故障类任务的Prompt内容"""
+
+    # 获取当前日期
+    current_date = datetime.now().strftime("%Y/%m/%d")
+
+    # 模板内容
+    template = f"""
+- sinci: {current_date}
+- author: {username}
+
+# 核心任务
+
+针对以下终端信息，请解释原因并在不影响原有功能和业务逻辑的基础上进行修复；若无法保证不影响原有功能和业务逻辑，则提供修复意见。
+
+```bash
+{request.bash_info}
+```
+
+# 开发规范约束
+{project.development_standard}"""
+
+    return template

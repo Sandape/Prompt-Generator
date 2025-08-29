@@ -148,3 +148,8 @@ class AITestResponse(BaseModel):
     success: bool
     message: str
     ai_response: Optional[str] = None
+
+class BugFixTaskRequest(BaseModel):
+    """故障类任务请求模型"""
+    bash_info: str
+    project_id: int

@@ -261,7 +261,7 @@ async def get_project_tasks(project_id: int, request: Request, token_data: dict 
             {
                 "id": "interface",
                 "name": "接口类任务",
-                "description": "传统的CRUD任务",
+                "description": "以接口为维度的开发任务",
                 "icon": "🔗"
             },
             {
@@ -273,13 +273,13 @@ async def get_project_tasks(project_id: int, request: Request, token_data: dict 
             {
                 "id": "integration",
                 "name": "集成类任务",
-                "description": "例如给项目集成ElasticSearch等中间件任务",
+                "description": "集成中间件服务任务",
                 "icon": "🔧"
             },
             {
                 "id": "fault",
                 "name": "故障类任务",
-                "description": "修复bug任务",
+                "description": "通过报错信息结合项目规范快速修复BUG",
                 "icon": "🐛"
             }
         ]

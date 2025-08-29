@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>故障类任务 - {{ project.name }} - Prompt Generator</title>
+    <link rel="stylesheet" href="/static/css/form_styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div class="form-page-container">
+        <div class="interface-task-container">
+    <!-- 表单容器 -->
+    <form id="bugFixForm" class="interface-form">
+        <!-- 第一页：报错信息输入 -->
+        <div class="form-page active" id="page1">
+            <div class="page-header">
+                <h3>第一步：报错信息输入</h3>
+                <p>请粘贴您遇到的终端报错信息</p>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="bashInfo">报错信息</label>
+                    <textarea id="bashInfo" name="bash_info" placeholder='请粘贴完整的终端报错信息，例如：
+[2025-08-29 09:37:46.662] [ERROR] [19780] --- [nio-9080-exec-3] SqlLog
+===sql===
+  Session  : 0
+  ConnId   : 10001
+  StmtId   : pstmt-20004
+  DbName   : DataSource-primary
+  Time     : 2025-08-29 09:37:46
+  CostLevel: 2
+  Cost     : 42 ms
+  DB_USER  : bote' rows="12" class="json-input"></textarea>
+                    <div class="input-validation-message" id="bashInfoValidation"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二页：生成Prompt -->
+        <div class="form-page" id="page2">
+            <div class="page-header">
+                <h3>第二步：生成Prompt</h3>
+                <p>确认报错信息并生成修复Prompt</p>
+            </div>
+
+            <div class="summary-section">
+                <h4>报错信息预览</h4>
+                <div class="summary-content" id="summaryContent">
+                    <pre id="errorPreview" style="background: #f5f5f5; padding: 1rem; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto;"></pre>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group button-group">
+                    <div class="button-container">
+                        <button type="button" id="generatePromptBtn" class="btn-generate">
+                            生成Prompt
+                        </button>
+                    </div>
+                    <div class="button-container">
+                        <button type="button" id="backToTasksBtn" class="btn-back-to-tasks">
+                            返回上一层
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- 导航按钮 -->
+    <div class="form-navigation">
+        <button type="button" id="prevBtn" class="btn-nav btn-secondary" disabled title="上一页">
+            ‹
+        </button>
+        <button type="button" id="nextBtn" class="btn-nav btn-primary" title="下一页">
+            ›
+        </button>
+    </div>
+</div>
+
+<!-- Prompt显示弹窗 -->
+<div id="promptModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">生成的修复Prompt</h3>
+            <span class="modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <!-- 加载状态 -->
+            <div class="loading-state" id="loadingState" style="display: none;">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+                <div class="loading-text">正在生成修复Prompt，请稍候...</div>
+            </div>
+
+            <!-- 结果状态 -->
+            <div class="result-state" id="resultState" style="display: none;">
+                <div class="prompt-content" id="promptContent"></div>
+                <div class="raw-markdown" id="rawMarkdown" style="display: none;"></div>
+            </div>
+
+            <!-- 错误状态 -->
+            <div class="error-state" id="errorState" style="display: none;">
+                <div class="error-icon">⚠️</div>
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+        </div>
+
+        <!-- 固定按钮区域 -->
+        <div class="modal-footer" id="modalFooter" style="display: none;">
+            <div class="prompt-actions">
+                <button type="button" id="copyPromptBtn" class="btn-copy">一键复制</button>
+                <button type="button" id="downloadPromptBtn" class="btn-download">下载为文件</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+// 表单数据存储
+let formData = {
+    bash_info: '',
+    project_id: "{{ project.id }}"
+};
+
+let currentPage = 1;
+const totalPages = 2;
+
+// 页面切换逻辑
+function showPage(pageNum) {
+    // 隐藏所有页面
+    document.querySelectorAll('.form-page').forEach(page => {
+        page.classList.remove('active');
+    });
+
+    // 显示目标页面
+    document.getElementById(`page${pageNum}`).classList.add('active');
+
+    // 更新导航按钮
+    updateNavigationButtons(pageNum);
+
+    // 如果是最后一页，更新预览信息
+    if (pageNum === totalPages) {
+        updateErrorPreview();
+    }
+}
+
+function updateNavigationButtons(pageNum) {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    if (pageNum === 1) {
+        prevBtn.style.display = 'block';
+        prevBtn.disabled = true;
+        nextBtn.style.display = 'block';
+        nextBtn.disabled = false;
+    } else if (pageNum === totalPages) {
+        prevBtn.style.display = 'block';
+        prevBtn.disabled = false;
+        nextBtn.style.display = 'block';
+        nextBtn.disabled = true;
+    }
+}
+
+// 导航按钮事件
+document.getElementById('nextBtn').addEventListener('click', () => {
+    if (currentPage < totalPages) {
+        if (validateCurrentPage()) {
+            currentPage++;
+            showPage(currentPage);
+        }
+    }
+});
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+    if (currentPage > 1) {
+        currentPage--;
+        showPage(currentPage);
+    }
+});
+
+// 页面验证逻辑
+function validateCurrentPage() {
+    switch(currentPage) {
+        case 1:
+            return validatePage1();
+        default:
+            return true;
+    }
+}
+
+function validatePage1() {
+    const bashInfo = document.getElementById('bashInfo');
+
+    if (bashInfo.value.trim()) {
+        showValidationMessage('bashInfoValidation', '报错信息已输入', 'success');
+        formData.bash_info = bashInfo.value.trim();
+        return true;
+    } else {
+        showValidationMessage('bashInfoValidation', '请输入报错信息', 'error');
+        return false;
+    }
+}
+
+// 显示验证消息
+function showValidationMessage(elementId, message, type) {
+    const element = document.getElementById(elementId);
+    element.textContent = message;
+    element.className = `input-validation-message ${type}`;
+}
+
+// 更新报错信息预览
+function updateErrorPreview() {
+    const errorPreview = document.getElementById('errorPreview');
+    const bashInfo = document.getElementById('bashInfo').value.trim();
+
+    if (bashInfo) {
+        errorPreview.textContent = bashInfo;
+        errorPreview.style.color = '#333';
+    } else {
+        errorPreview.textContent = '暂无报错信息';
+        errorPreview.style.color = '#999';
+    }
+}
+
+// 初始化页面
+document.addEventListener('DOMContentLoaded', function() {
+    showPage(1);
+
+    // 绑定其他事件监听器
+    initializeDynamicInputs();
+
+    // 绑定生成Prompt按钮事件
+    document.getElementById('generatePromptBtn').addEventListener('click', generatePrompt);
+
+    // 绑定返回任务类型选择按钮事件
+    document.getElementById('backToTasksBtn').addEventListener('click', function() {
+        const projectId = "{{ project.id }}";
+        window.location.href = `/projects/${projectId}/tasks`;
+    });
+
+    // 绑定下载按钮事件
+    document.getElementById('downloadPromptBtn').addEventListener('click', downloadPrompt);
+});
+
+// 动态输入功能
+function initializeDynamicInputs() {
+    // 报错信息输入验证
+    document.getElementById('bashInfo').addEventListener('input', function() {
+        const bashInfo = this.value.trim();
+        if (bashInfo) {
+            showValidationMessage('bashInfoValidation', '报错信息已输入', 'success');
+        } else {
+            showValidationMessage('bashInfoValidation', '', 'neutral');
+        }
+    });
+}
+
+// 生成Prompt
+async function generatePrompt() {
+    // 确保所有数据都被收集
+    collectAllFormData();
+
+    // 显示加载模态框
+    showLoadingModal('正在生成修复Prompt，请稍候...');
+
+    try {
+        const response = await fetch('/tasks/generate-bug-fix-prompt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showPromptModal(result.prompt_content);
+        } else {
+            showErrorModal('生成失败：' + result.message);
+        }
+    } catch (error) {
+        showErrorModal('网络错误：' + error.message);
+    }
+}
+
+// 收集所有表单数据
+function collectAllFormData() {
+    // 确保所有输入框的值都被收集
+    const fields = ['bashInfo'];
+    fields.forEach(fieldId => {
+        const element = document.getElementById(fieldId);
+        if (element) {
+            const fieldName = element.name || fieldId.toLowerCase().replace('bash', 'bash_');
+            formData[fieldName] = element.value.trim();
+        }
+    });
+}
+
+// 显示Prompt弹窗
+function showPromptModal(promptContent) {
+    const modal = document.getElementById('promptModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const promptContentDiv = document.getElementById('promptContent');
+    const rawMarkdownDiv = document.getElementById('rawMarkdown');
+    const loadingState = document.getElementById('loadingState');
+    const resultState = document.getElementById('resultState');
+    const errorState = document.getElementById('errorState');
+
+    // 设置标题
+    modalTitle.textContent = '生成的修复Prompt';
+
+    // 隐藏加载和错误状态，显示结果状态和底部按钮
+    loadingState.style.display = 'none';
+    errorState.style.display = 'none';
+    resultState.style.display = 'block';
+
+    // 显示底部按钮区域
+    const modalFooter = document.getElementById('modalFooter');
+    if (modalFooter) {
+        modalFooter.style.display = 'block';
+    }
+
+    // 保存原始Markdown内容用于复制
+    rawMarkdownDiv.textContent = promptContent;
+
+    // 渲染Markdown为HTML进行预览
+    const htmlContent = renderMarkdownToHtml(promptContent);
+    promptContentDiv.innerHTML = htmlContent;
+
+    // 使用.show类来居中显示弹窗
+    modal.classList.add('show');
+}
+
+// 显示加载状态
+function showLoadingModal(title = '正在生成修复Prompt，请稍候...') {
+    const modal = document.getElementById('promptModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const loadingState = document.getElementById('loadingState');
+    const resultState = document.getElementById('resultState');
+    const errorState = document.getElementById('errorState');
+
+    // 设置标题
+    modalTitle.textContent = '生成中';
+
+    // 显示加载状态，隐藏其他状态
+    loadingState.style.display = 'block';
+    resultState.style.display = 'none';
+    errorState.style.display = 'none';
+
+    // 使用.show类来居中显示弹窗
+    modal.classList.add('show');
+}
+
+// 显示错误状态
+function showErrorModal(errorMessage) {
+    const modal = document.getElementById('promptModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const errorMessageDiv = document.getElementById('errorMessage');
+    const loadingState = document.getElementById('loadingState');
+    const resultState = document.getElementById('resultState');
+    const errorState = document.getElementById('errorState');
+
+    // 设置标题
+    modalTitle.textContent = '生成失败';
+
+    // 设置错误信息
+    errorMessageDiv.textContent = errorMessage;
+
+    // 显示错误状态，隐藏其他状态
+    loadingState.style.display = 'none';
+    resultState.style.display = 'none';
+    errorState.style.display = 'block';
+
+    // 使用.show类来居中显示弹窗
+    modal.classList.add('show');
+}
+
+// 重置模态框状态
+function resetModalState() {
+    const modalTitle = document.getElementById('modalTitle');
+    const loadingState = document.getElementById('loadingState');
+    const resultState = document.getElementById('resultState');
+    const errorState = document.getElementById('errorState');
+    const modalFooter = document.getElementById('modalFooter');
+
+    // 重置标题
+    modalTitle.textContent = '生成的修复Prompt';
+
+    // 重置显示状态
+    loadingState.style.display = 'none';
+    resultState.style.display = 'none';
+    errorState.style.display = 'none';
+
+    // 隐藏底部按钮区域
+    if (modalFooter) {
+        modalFooter.style.display = 'none';
+    }
+}
+
+// 增强的Markdown渲染函数
+function renderMarkdownToHtml(markdown) {
+    // 预处理：按行分割并处理
+    const lines = markdown.split('\n');
+    let html = '';
+    let inCodeBlock = false;
+    let codeBlockLanguage = '';
+    let codeBlockContent = [];
+    let tableRows = [];
+    let inTable = false;
+    let listItems = [];
+    let inList = false;
+    let listType = ''; // 'ul' 或 'ol'
+    let prevLineWasEmpty = false;
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+
+        // 代码块处理
+        if (line.startsWith('```')) {
+            if (inCodeBlock) {
+                // 结束代码块
+                const lang = codeBlockLanguage || 'text';
+                const highlightedCode = highlightCode(codeBlockContent.join('\n'), lang.toLowerCase());
+                html += `<pre class="code-block" data-lang="${lang}"><code class="language-${lang}">${highlightedCode}</code></pre>`;
+                inCodeBlock = false;
+                codeBlockContent = [];
+                codeBlockLanguage = '';
+            } else {
+                // 开始代码块
+                inCodeBlock = true;
+                codeBlockLanguage = line.substring(3).trim();
+            }
+            continue;
+        }
+
+        if (inCodeBlock) {
+            codeBlockContent.push(line);
+            continue;
+        }
+
+        // 处理标题
+        if (line.match(/^#{1,6}\s/)) {
+            const level = line.match(/^(#{1,6})/)[1].length;
+            const text = line.substring(level + 1).trim();
+            html += `<h${level} class="markdown-heading">${text}</h${level}>`;
+            continue;
+        }
+
+        // 处理分割线
+        if (line.match(/^[-*_]{3,}$/)) {
+            html += '<hr class="markdown-hr">';
+            continue;
+        }
+
+        // 处理表格
+        if (line.includes('|')) {
+            const cells = line.split('|').map(cell => cell.trim());
+            if (cells.length > 1 && cells.every(cell => cell !== '')) {
+                if (!inTable) {
+                    inTable = true;
+                    tableRows = [];
+                }
+                tableRows.push(cells);
+            } else if (inTable) {
+                // 结束表格
+                if (tableRows.length > 0) {
+                    html += renderTable(tableRows);
+                }
+                inTable = false;
+                tableRows = [];
+            }
+        } else if (inTable) {
+            // 结束表格
+            if (tableRows.length > 0) {
+                html += renderTable(tableRows);
+            }
+            inTable = false;
+            tableRows = [];
+        }
+
+        // 处理列表
+        if (line.match(/^(\s*)[-\*\+]\s/) || line.match(/^(\s*)\d+\.\s/)) {
+            const match = line.match(/^(\s*)([-\*\+]|\d+\.)\s(.*)$/);
+            if (match) {
+                const indent = match[1].length;
+                const marker = match[2];
+                const content = match[3];
+
+                if (!inList || indent !== listItems[listItems.length - 1]?.indent) {
+                    // 开始新列表或嵌套列表
+                    if (inList) {
+                        html += renderList(listItems, listType);
+                        listItems = [];
+                    }
+                    inList = true;
+                    listType = marker.match(/\d+\./) ? 'ol' : 'ul';
+                }
+
+                listItems.push({
+                    content: processInlineElements(content),
+                    indent: indent
+                });
+            }
+        } else if (inList && line.trim() === '') {
+            // 空行，保持列表状态
+        } else if (inList) {
+            // 结束列表
+            html += renderList(listItems, listType);
+            inList = false;
+            listItems = [];
+        }
+
+        // 处理引用
+        if (line.startsWith('> ')) {
+            const content = line.substring(2);
+            html += `<blockquote class="markdown-quote">${processInlineElements(content)}</blockquote>`;
+            continue;
+        }
+
+        // 处理普通段落
+        if (line.trim() !== '' && !inTable && !inList) {
+            // 合并连续的段落，避免过多空行
+            if (prevLineWasEmpty && html.lastIndexOf('<br>') === html.length - 4) {
+                html = html.slice(0, -4); // 移除最后一个<br>
+            }
+            html += `<p class="markdown-paragraph">${processInlineElements(line)}</p>`;
+        } else if (line.trim() === '' && !inTable && !inList) {
+            // 避免连续的空行
+            if (!prevLineWasEmpty) {
+                html += '<br>';
+            }
+        }
+
+        prevLineWasEmpty = line.trim() === '';
+    }
+
+    // 处理剩余的内容
+    if (inTable && tableRows.length > 0) {
+        html += renderTable(tableRows);
+    }
+    if (inList && listItems.length > 0) {
+        html += renderList(listItems, listType);
+    }
+
+    return html;
+}
+
+// 渲染表格
+function renderTable(rows) {
+    if (rows.length === 0) return '';
+
+    let html = '<table class="markdown-table">';
+
+    // 检查是否有分隔行来确定表头
+    let hasHeader = false;
+    if (rows.length >= 2) {
+        const secondRow = rows[1];
+        hasHeader = secondRow.some(cell =>
+            cell.trim().match(/^:?-+:?$/) // 匹配表格分隔符
+        );
+    }
+
+    if (hasHeader && rows.length > 2) {
+        // 有表头的情况
+        html += '<thead><tr>';
+        rows[0].forEach(cell => {
+            html += `<th>${processInlineElements(cell.trim())}</th>`;
+        });
+        html += '</tr></thead>';
+
+        html += '<tbody>';
+        for (let i = 2; i < rows.length; i++) {
+            html += '<tr>';
+            rows[i].forEach(cell => {
+                html += `<td>${processInlineElements(cell.trim())}</td>`;
+            });
+            html += '</tr>';
+        }
+        html += '</tbody>';
+    } else {
+        // 无表头的情况，所有行都是数据行
+        html += '<tbody>';
+        rows.forEach(row => {
+            html += '<tr>';
+            row.forEach(cell => {
+                html += `<td>${processInlineElements(cell.trim())}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody>';
+    }
+
+    html += '</table>';
+    return html;
+}
+
+// 渲染列表
+function renderList(items, type) {
+    if (items.length === 0) return '';
+
+    let html = `<${type} class="markdown-list">`;
+    items.forEach(item => {
+        html += `<li>${item.content}</li>`;
+    });
+    html += `</${type}>`;
+
+    return html;
+}
+
+// 处理内联元素
+function processInlineElements(text) {
+    return text
+        // 粗体
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/__(.*?)__/g, '<strong>$1</strong>')
+
+        // 斜体
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/_(.*?)_/g, '<em>$1</em>')
+
+        // 删除线
+        .replace(/~~(.*?)~~/g, '<del>$1</del>')
+
+        // 内联代码
+        .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
+
+        // 链接
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+
+        // 自动链接
+        .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
+
+        // 任务列表
+        .replace(/-\s*\[([ x])\]\s*(.+)/gi, (match, checked, text) => {
+            const isChecked = checked.toLowerCase() === 'x';
+            return `<label class="task-item"><input type="checkbox" ${isChecked ? 'checked' : ''} disabled> ${text}</label>`;
+        })
+
+        // 高亮文本
+        .replace(/==(.*?)==/g, '<mark>$1</mark>')
+
+        // 上标和下标
+        .replace(/\^([^\s]+)\^/g, '<sup>$1</sup>')
+        .replace(/~([^\s]+)~/g, '<sub>$1</sub>');
+}
+
+// 简单的代码高亮
+function highlightCode(code, language) {
+    // 常见的编程语言关键字
+    const keywords = {
+        javascript: ['function', 'const', 'let', 'var', 'if', 'else', 'for', 'while', 'return', 'class', 'extends', 'import', 'export', 'default', 'try', 'catch', 'finally', 'async', 'await', 'new', 'this', 'super'],
+        python: ['def', 'class', 'if', 'elif', 'else', 'for', 'while', 'return', 'import', 'from', 'try', 'except', 'finally', 'with', 'as', 'lambda', 'and', 'or', 'not', 'in', 'is', 'None', 'True', 'False'],
+        java: ['public', 'private', 'protected', 'class', 'interface', 'extends', 'implements', 'static', 'final', 'void', 'int', 'String', 'boolean', 'if', 'else', 'for', 'while', 'return', 'try', 'catch', 'finally', 'new', 'this', 'super'],
+        sql: ['SELECT', 'FROM', 'WHERE', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'TABLE', 'ALTER', 'DROP', 'PRIMARY', 'KEY', 'FOREIGN', 'REFERENCES', 'NOT', 'NULL', 'AUTO_INCREMENT'],
+        bash: ['if', 'then', 'else', 'elif', 'fi', 'for', 'while', 'do', 'done', 'case', 'esac', 'function', 'return', 'exit', 'echo', 'printf', 'read', 'cd', 'ls', 'pwd', 'mkdir', 'rm', 'cp', 'mv', 'cat', 'grep', 'sed', 'awk', 'curl', 'wget']
+    };
+
+    const langKeywords = keywords[language] || keywords.bash;
+
+    if (langKeywords.length === 0) {
+        return escapeHtml(code);
+    }
+
+    // 创建正则表达式来匹配关键字
+    const keywordRegex = new RegExp(`\\b(${langKeywords.join('|')})\\b`, 'g');
+
+    // 对代码进行转义，然后高亮关键字
+    let highlighted = escapeHtml(code);
+
+    // 高亮关键字
+    highlighted = highlighted.replace(keywordRegex, '<span class="code-keyword">$1</span>');
+
+    // 高亮字符串
+    highlighted = highlighted.replace(/(["'`])((?:\\.|(?!\1)[^\\])*?)\1/g, '<span class="code-string">$1$2$1</span>');
+
+    // 高亮注释
+    if (language === 'javascript' || language === 'java') {
+        highlighted = highlighted.replace(/(\/\/.*$)/gm, '<span class="code-comment">$1</span>');
+        highlighted = highlighted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="code-comment">$1</span>');
+    } else if (language === 'python') {
+        highlighted = highlighted.replace(/(#.*$)/gm, '<span class="code-comment">$1</span>');
+        highlighted = highlighted.replace(/("""[\s\S]*?""")|('''[\s\S]*?''')/g, '<span class="code-comment">$1</span>');
+    } else if (language === 'sql') {
+        highlighted = highlighted.replace(/(--.*$)/gm, '<span class="code-comment">$1</span>');
+        highlighted = highlighted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="code-comment">$1</span>');
+    } else if (language === 'bash') {
+        highlighted = highlighted.replace(/(#.*$)/gm, '<span class="code-comment">$1</span>');
+    }
+
+    // 高亮数字
+    highlighted = highlighted.replace(/\b\d+(\.\d+)?\b/g, '<span class="code-number">$&</span>');
+
+    return highlighted;
+}
+
+// HTML转义
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// 复制Prompt
+document.getElementById('copyPromptBtn').addEventListener('click', () => {
+    const rawMarkdown = document.getElementById('rawMarkdown').textContent;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(rawMarkdown).then(() => {
+            showCopySuccess();
+        }).catch(err => {
+            console.error('复制失败:', err);
+            fallbackCopyTextToClipboard(rawMarkdown);
+        });
+    } else {
+        fallbackCopyTextToClipboard(rawMarkdown);
+    }
+});
+
+// 下载Prompt为文件
+function downloadPrompt() {
+    const rawMarkdown = document.getElementById('rawMarkdown').textContent;
+    const bashInfo = document.getElementById('bashInfo').value.trim().substring(0, 50).replace(/[^a-zA-Z0-9]/g, '_');
+    const fileName = `bug_fix_prompt_${bashInfo}.md`;
+
+    const blob = new Blob([rawMarkdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // 文件下载成功，无需提示
+}
+
+// 显示复制成功提示
+function showCopySuccess() {
+    const btn = document.getElementById('copyPromptBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '复制成功！';
+    btn.style.background = '#4CAF50';
+
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.style.background = '';
+    }, 2000);
+}
+
+// 备用复制方法
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        document.execCommand('copy');
+        showCopySuccess();
+    } catch (err) {
+        console.error('备用复制方法失败:', err);
+        alert('复制失败，请手动复制');
+    }
+
+    document.body.removeChild(textArea);
+}
+
+// 关闭弹窗
+document.querySelector('.modal-close').addEventListener('click', () => {
+    document.getElementById('promptModal').classList.remove('show');
+    // 延迟重置状态，确保关闭动画完成
+    setTimeout(() => {
+        resetModalState();
+    }, 300);
+});
+
+// 点击弹窗外部关闭
+window.addEventListener('click', (event) => {
+    const modal = document.getElementById('promptModal');
+    if (event.target === modal) {
+        modal.classList.remove('show');
+        // 延迟重置状态，确保关闭动画完成
+        setTimeout(() => {
+            resetModalState();
+        }, 300);
+    }
+});
+</script>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
